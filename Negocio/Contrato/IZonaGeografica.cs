@@ -1,0 +1,11 @@
+using Comun.Dto;
+using Negocio.Contrato.Crud;
+
+namespace Negocio.Contrato
+{
+    public interface IZonaGeografica : IGuardar, IConsulta, IActualizar, IEliminar
+    {
+        Task<RespuestaDto<TReturn>> ConsultarListaDepartamentosAsync<TReturn>();
+        Task<RespuestaDto<TReturn>> ConsultarListaMunicipiosPorDepartamentoIdAsync<TParam, TReturn>(TParam _param);
+    }
+}
