@@ -18,18 +18,22 @@ namespace Web.Api.Extension
         public static void ObjectDependencyInjector(this WebApplicationBuilder _builder)
         {
             _builder.Services.AddDbContext<ContextoDb>(options =>
-             options.UseSqlServer(_builder.Configuration.GetConnectionString("DbConexion")));
+                  options.UseNpgsql(
+                      _builder.Configuration.GetConnectionString("DbConexion")
+                  )
+              );
 
-            _builder.Services.AddDbContext<DbContextError>(opciones =>
-             opciones.UseSqlServer(_builder.Configuration.GetConnectionString("DbConexion")));
+            _builder.Services.AddDbContext<DbContextError>(options =>
+                  options.UseNpgsql(
+                      _builder.Configuration.GetConnectionString("DbConexion")
+                  )
+              );
 
-            _builder.Services.AddScoped<IDominio, DominioLogica>();
             _builder.Services.AddScoped<IUsuario, UsuarioLogica>();
             _builder.Services.AddScoped<IRolUsuario, RolUsuarioLogica>();
             _builder.Services.AddScoped<IRol, RolLogica>();
             _builder.Services.AddScoped<IMenu, MenuLogica>();
             _builder.Services.AddScoped<IPerfil, PerfilLogica>();
-            _builder.Services.AddScoped<IDistribuidor, DistribuidorLogica>();
             _builder.Services.AddScoped<IZonaGeografica, ZonaGeograficaLogica>();
         }
     }

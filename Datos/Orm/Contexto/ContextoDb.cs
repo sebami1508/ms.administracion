@@ -12,13 +12,9 @@ namespace Datos.Orm.Contexto
         }
 
         public DbSet<TaAuditoriaModel> TaAuditoria { get; set; }
-        public DbSet<TaAuditoriaConsultaModel> TaAuditoriaConsulta { get; set; }
-        public DbSet<TaDominioModel> TaDominioModel { get; set; }
         public DbSet<TaUsuarioModel> TaUsuarioModel { get; set; }
         public DbSet<TaRolModel> TaRolModel { get; set; }
         public DbSet<TaRolUsuarioModel> TaRolUsuarioModel { get; set; }
-        public DbSet<TaDistribuidorModel> TaDistribuidorModel { get; set; }
-        public DbSet<TaPersonaModel> TaPersonaModel { get; set; }
         public DbSet<TaMenuModel> TaMenuModel { get; set; }
         public DbSet<TaPerfilModel> TaPerfilModel { get; set; }
         public DbSet<TaZonaGeograficaModel> TaZonaGeograficaModel { get; set; }
@@ -28,13 +24,9 @@ namespace Datos.Orm.Contexto
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.ApplyConfiguration(new TaAuditoriaModelEtc());
-            modelBuilder.ApplyConfiguration(new TaAuditoriaConsultaModelEtc());
-            modelBuilder.ApplyConfiguration(new TaDominioModelEtc());
             modelBuilder.ApplyConfiguration(new TaUsuarioModelEtc());
             modelBuilder.ApplyConfiguration(new TaRolModelEtc());
             modelBuilder.ApplyConfiguration(new TaRolUsuarioModelEtc());
-            modelBuilder.ApplyConfiguration(new TaDistribuidorModelEtc());
-            modelBuilder.ApplyConfiguration(new TaPersonaModelEtc());
             modelBuilder.ApplyConfiguration(new TaMenuModelEtc());
             modelBuilder.ApplyConfiguration(new TaPerfilModelEtc());
             modelBuilder.ApplyConfiguration(new TaZonaGeograficaModelEtc());

@@ -13,10 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="Validador\DistribuidorValidator.cs" />
-    <Compile Include="Validador\DominioValidator.cs" />
     <Compile Include="Validador\PerfilValidator.cs" />
-    <Compile Include="Validador\PersonaValidator.cs" />
     <Compile Include="Validador\RolUsuarioValidator.cs" />
     <Compile Include="Validador\RolValidator.cs" />
     <Compile Include="Validador\UsuarioValidator.cs" />

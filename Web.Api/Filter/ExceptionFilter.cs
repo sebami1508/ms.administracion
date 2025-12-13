@@ -3,8 +3,9 @@ using Comun.Enumeracion;
 using Datos.Orm.Contexto;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Negocio.Utilidad;
+using Npgsql;
 using System.Security.Cryptography;
 
 namespace Web.Api.Filtro
@@ -83,78 +84,76 @@ namespace Web.Api.Filtro
         {
             // Desempaquetar AggregateException (caso Task/async) si solo trae una inner
             while (exception is AggregateException agg && agg.InnerExceptions.Count == 1)
-            {
                 exception = agg.InnerExceptions[0];
-            }
 
             // Si existe una InnerException más específica, la usamos para determinar el código
             var inner = exception.InnerException;
-            if (inner is SqlException innerSql)
-            {
-                return MapSqlException(innerSql);
-            }
 
-            // Manejo de DbUpdateException (EF Core) que suele envolver SqlException
-            if (exception is Microsoft.EntityFrameworkCore.DbUpdateException dbUpdate && dbUpdate.InnerException is SqlException sqlFromUpdate)
-            {
-                return MapSqlException(sqlFromUpdate);
-            }
+            // EF Core: DbUpdateException suele envolver PostgresException
+            if (exception is DbUpdateException dbUpdate && dbUpdate.InnerException is PostgresException pgFromUpdate)
+                return MapPostgresException(pgFromUpdate);
 
-            if (exception is SqlException directSql)
-            {
-                return MapSqlException(directSql);
-            }
+            // InnerException directa
+            if (inner is PostgresException innerPg)
+                return MapPostgresException(innerPg);
+
+            // Excepción PG directa
+            if (exception is PostgresException directPg)
+                return MapPostgresException(directPg);
+
+            // Problemas de conexión/timeout de Npgsql (no siempre trae SqlState)
+            if (exception is NpgsqlException)
+                return StatusCodes.Status503ServiceUnavailable;
 
             // Concurrency en EF → 409
-            if (exception is Microsoft.EntityFrameworkCore.DbUpdateConcurrencyException)
-            {
+            if (exception is DbUpdateConcurrencyException)
                 return StatusCodes.Status409Conflict;
-            }
 
-            // Validaciones (FluentValidation) → 400 si se usa ValidationException
+            // Validaciones (FluentValidation) → 400
             if (exception.GetType().FullName == "FluentValidation.ValidationException")
-            {
                 return StatusCodes.Status400BadRequest;
-            }
 
-            // Añadir algunos tipos comunes adicionales
+            // Tipos comunes adicionales
             if (exception is NotSupportedException)
                 return StatusCodes.Status501NotImplemented;
+
             if (exception is OperationCanceledException)
                 return StatusCodes.Status408RequestTimeout;
+
             if (exception is NullReferenceException)
-                return StatusCodes.Status500InternalServerError; // se deja como 500 (error lógico)
+                return StatusCodes.Status500InternalServerError;
 
             return ExceptionStatusCodes.TryGetValue(exception.GetType(), out int statusCode)
                 ? statusCode
                 : StatusCodes.Status500InternalServerError;
         }
 
-        private static int MapSqlException(SqlException ex)
+        private static int MapPostgresException(PostgresException ex)
         {
-            return ex.Number switch
+            return ex.SqlState switch
             {
-                2627 => StatusCodes.Status409Conflict, // PK duplicada
-                2601 => StatusCodes.Status409Conflict, // índice único duplicado
-                547  => StatusCodes.Status409Conflict, // violación de FK / check (conflicto de integridad)
-                208  => StatusCodes.Status404NotFound, // objeto no encontrado
-                515  => StatusCodes.Status422UnprocessableEntity, // NOT NULL violado
-                18456 => StatusCodes.Status401Unauthorized, // login incorrecto
-                229  => StatusCodes.Status403Forbidden, // permisos insuficientes
-                1205 => StatusCodes.Status409Conflict, // deadlock victim
-                _    => StatusCodes.Status500InternalServerError
+                "23505" => StatusCodes.Status409Conflict,              // UNIQUE / PK duplicada
+                "23503" => StatusCodes.Status409Conflict,              // FK violation
+                "23514" => StatusCodes.Status409Conflict,              // CHECK violation (integridad)
+                "23502" => StatusCodes.Status422UnprocessableEntity,   // NOT NULL violation
+                "42P01" => StatusCodes.Status404NotFound,              // tabla/vista no existe
+                "42501" => StatusCodes.Status403Forbidden,             // permisos insuficientes
+                "28P01" => StatusCodes.Status401Unauthorized,          // auth (password inválida)
+                "40P01" => StatusCodes.Status409Conflict,              // deadlock_detected
+                "57014" => StatusCodes.Status408RequestTimeout,        // query_canceled/cancelled
+                _ => StatusCodes.Status500InternalServerError
             };
         }
 
         public static string GenerarIdentificador()
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                byte[] randomBytes = new byte[8];
-                rng.GetBytes(randomBytes);
-                return new string(randomBytes.Select(b => chars[b % chars.Length]).ToArray());
-            }
+            using var rng = RandomNumberGenerator.Create();
+
+            byte[] randomBytes = new byte[8];
+            rng.GetBytes(randomBytes);
+
+            return new string(randomBytes.Select(b => chars[b % chars.Length]).ToArray());
         }
     }
 
