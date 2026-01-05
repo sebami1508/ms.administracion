@@ -35,6 +35,8 @@ namespace Web.Api.Extension
             _builder.Services.AddScoped<IMenu, MenuLogica>();
             _builder.Services.AddScoped<IPerfil, PerfilLogica>();
             _builder.Services.AddScoped<IZonaGeografica, ZonaGeograficaLogica>();
+            _builder.Services.AddScoped<IDominio, DominioLogica>();
+            _builder.Services.AddScoped<IProducto, ProductoLogica>();
         }
     }
 }

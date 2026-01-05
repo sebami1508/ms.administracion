@@ -13,8 +13,6 @@
         public string Password { get; set; }
         public bool IngresoPrimeraVez { get; set; }
         public bool Vigente { get; set; }
-        public bool? Externo { get; set; }
-
 
         public ICollection<TaRolUsuarioModel> LtsTaRolesModel { get; set; }
         public ICollection<TaAuditoriaModel> LtsTaAuditoria { get; set; }

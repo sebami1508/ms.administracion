@@ -13,7 +13,6 @@ namespace Comun.Dto.DtoParameter
         public bool Vigente { get; set; }
         public string? Password { get; set; }
         public bool IngresoPrimeraVez { get; set; }
-        public bool? Externo { get; set; }
 
 
         #region Propiedades de consulta

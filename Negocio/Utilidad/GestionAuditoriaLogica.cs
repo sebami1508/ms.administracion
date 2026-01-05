@@ -110,7 +110,7 @@ namespace Negocio.Utilidad
                     {
                         AuditoriaId = Guid.NewGuid().ToString(),
                         TablaId = primaryKey,
-                        Fecha = DateTime.Now,
+                        Fecha = DateTime.UtcNow,
                         MaquinaIp = _parametrosAuditoriaDto.AuditoriaMaquina,
                         UsuarioId = _parametrosAuditoriaDto.AuditoriaUsuario,
                         ValorAntiguo = valorAntiguo,

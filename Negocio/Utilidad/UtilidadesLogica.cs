@@ -110,75 +110,62 @@ namespace Negocio.Utilidad
 
         public static (bool, string) EnviarCorreo(string _correo, string _contraseña, string _destinario, string _asunto, string _body)
         {
-            // Validar parámetros
             if (string.IsNullOrWhiteSpace(_correo) || string.IsNullOrWhiteSpace(_contraseña) ||
                 string.IsNullOrWhiteSpace(_destinario) || string.IsNullOrWhiteSpace(_asunto) || string.IsNullOrWhiteSpace(_body))
             {
-                return (false, "Los datos para enviar el correo estan incompletos.");
+                return (false, "Los datos para enviar el correo están incompletos.");
             }
 
             try
             {
-                // Ruta de la imagen
-                //var logoPath = "D:\\1_Proyectos\\Ms.Uniox\\WebApi\\Imagenes\\Logos\\logo_03.png";
                 var logoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Imagenes\\Logos\\logo_03.png");
 
-
-                // Crear el mensaje de correo
-                var mailMessage = new MailMessage
+                using (var mailMessage = new MailMessage())
                 {
-                    From = new MailAddress(_correo),
-                    Subject = _asunto,
-                    Body = _body,
-                    IsBodyHtml = true
-                };
+                    mailMessage.From = new MailAddress(_correo);
+                    mailMessage.Subject = _asunto;
+                    mailMessage.Body = _body;
+                    mailMessage.IsBodyHtml = true;
 
-                // Crear vista alternativa HTML
-                var htmlView = AlternateView.CreateAlternateViewFromString(_body, null, "text/html");
+                    var htmlView = AlternateView.CreateAlternateViewFromString(_body, null, "text/html");
 
-                // Verificar si la ruta de la imagen es válida y si el archivo existe
-                if (!string.IsNullOrEmpty(logoPath) && File.Exists(logoPath))
-                {
-                    // Incluir la imagen en el mensaje
-                    var logo = new LinkedResource(logoPath, "image/png")
+                    if (!string.IsNullOrEmpty(logoPath) && File.Exists(logoPath))
                     {
-                        ContentId = "logo",
-                        TransferEncoding = TransferEncoding.Base64
-                    };
+                        var logo = new LinkedResource(logoPath, "image/png")
+                        {
+                            ContentId = "logo",
+                            TransferEncoding = TransferEncoding.Base64
+                        };
+                        htmlView.LinkedResources.Add(logo);
+                    }
 
-                    // Agregar la imagen a la vista HTML
-                    htmlView.LinkedResources.Add(logo);
+                    mailMessage.AlternateViews.Add(htmlView);
+                    mailMessage.To.Add(_destinario);
+
+                    using (var client = new SmtpClient("smtp.gmail.com", 587))
+                    {
+                        client.EnableSsl = true;
+                        client.UseDefaultCredentials = false;
+                        client.Credentials = new NetworkCredential(_correo, _contraseña);
+                        client.DeliveryMethod = SmtpDeliveryMethod.Network;
+
+                        client.Send(mailMessage);
+                    }
                 }
 
-                // Agregar la vista alternativa al correo
-                mailMessage.AlternateViews.Add(htmlView);
-
-                // Agregar destinatario
-                mailMessage.To.Add(_destinario);
-
-                // Configuración del cliente SMTP
-                SmtpClient client = new SmtpClient("smtp.office365.com", 587)
-                {
-                    EnableSsl = true, // Habilitar SSL
-                    UseDefaultCredentials = false,
-                    Credentials = new NetworkCredential(_correo, _contraseña)
-                };
-
-                // Enviar correo
-                client.Send(mailMessage);
                 return (true, "Correo enviado correctamente.");
             }
             catch (SmtpException smtpEx)
             {
-                // Manejo de excepciones SMTP específicas
                 return (false, $"Error SMTP: {smtpEx.Message}");
             }
             catch (Exception ex)
             {
-                // Manejo de cualquier otra excepción
                 return (false, $"Error general: {ex.Message}");
             }
         }
+
+
 
 
         public static (bool, string) EnviarCorreoAdjuntos(string correo, string contraseña, string destinario, string asunto, string body, byte[] archivo1 = null, byte[] archivo2 = null)

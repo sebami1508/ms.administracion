@@ -45,9 +45,6 @@ namespace Datos.Orm.Configuracion
 
             builder.Property(s => s.Vigente)
                    .HasColumnName("VIGENTE");
-
-            builder.Property(s => s.Externo)
-                   .HasColumnName("EXTERNO");
         }
     }
 }

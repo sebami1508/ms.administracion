@@ -1,0 +1,9 @@
+using Comun.Dto;
+using Negocio.Contrato.Crud;
+
+namespace Negocio.Contrato
+{
+    public interface IProducto : IGuardar, IConsulta, IEliminar, IActualizar
+    {
+    }
+}

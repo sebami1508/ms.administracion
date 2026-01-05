@@ -43,7 +43,7 @@ namespace Negocio.Utilidad
                     CodigoEstado = codigoEstado.ToString(),
                     Mensaje = respuestaDto.Mensaje.Length >= 500 ? respuestaDto.Mensaje.Substring(0, 500) : respuestaDto.Mensaje,
                     Excepcion = excepcion.Length >= 4000 ? excepcion.Substring(0, 4000) : excepcion,
-                    Fecha = DateTime.Now,
+                    Fecha = DateTime.UtcNow,
                     Modulo = Constantes.NombreMicroServicio,
                     InnerException = innerException.Length >= 4000 ? innerException.Substring(0, 4000) : innerException,
                     StackTrace = stackTrace.Length >= 4000 ? stackTrace.Substring(0, 4000) : stackTrace

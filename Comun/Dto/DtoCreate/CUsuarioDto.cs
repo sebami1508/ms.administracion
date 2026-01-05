@@ -9,6 +9,5 @@ namespace Comun.Dto.DtoParameter
         public decimal? Identificacion { get; set; }
         public string? Celular { get; set; }
         public string? CorreoElectronico { get; set; }
-        public bool? Externo { get; set; }
     }
 }

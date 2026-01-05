@@ -89,8 +89,7 @@ namespace Negocio.Gestion
                 CorreoElectronico = correoNormalizado,
                 Password = passwordEncriptada,
                 IngresoPrimeraVez = false,
-                Vigente = true,
-                Externo = dto.Externo
+                Vigente = true
             };
 
             db.Add(nuevoUsuario);
@@ -108,14 +107,14 @@ namespace Negocio.Gestion
             var fecha = DateTime.Now;
             return $@"
                 <div style='font-size: 16px; font-family: Arial; font-style: italic; color: #333; font-weight: bold; text-align: left; margin-top: 20px;'>
-                    Bogotá D.C., {fecha.ToLongDateString()}
+                    Santa María - Huila, {fecha.ToLongDateString()}
                 </div>
                 <br />
                 <div style='font-size: 16px; font-family: Arial; font-style: italic; color: #333; font-weight: bold; text-align: left; margin-top: 10px;'>
                     Estimado(a) {nombres} {apellidos}
                 </div>
                 <div style='font-size: 16px; font-family: Arial; color: #333; text-align: justify; font-weight: normal; margin-top: 20px;'>
-                    Queremos informarle que le hemos creado un usuario. A continuación, encontrará los detalles de acceso:
+                    Queremos informarle que le hemos creado un usuario para el sistema de BRADAMELA. A continuación, encontrará los detalles de acceso:
                 </div>
                 <br />
                 <div style='font-size: 16px; font-family: Arial; color: #333; text-align: left; margin-top: 20px;'>
@@ -125,11 +124,12 @@ namespace Negocio.Gestion
                     <strong>Contraseña:</strong> {password}
                 </div>
                 <br />
+                <br />
                 <div style='font-size: 16px; font-family: Arial; color: #333; text-align: justify; margin-top: 20px;'>
                     Estos datos le permitirán acceder al sistema de acuerdo a los roles que le han sido asignados. Recuerde que esta información es confidencial, exclusivamente para usted y no debe compartirla con nadie más. Una vez ingrese al sistema deberá cambiar la contraseña.                
                 </div>
                 <div style='margin-top: 10px; margin-bottom: 10px;'>
-                    <a href='{urlInicio}' style='display: inline-block; text-decoration: none; font-size: 16px; font-family: Arial; color: white; background-color: #e30615; border: 2px solid #e30615; padding: 10px 20px; font-weight: bold; cursor: pointer; transition: background-color 0.3s, color 0.3s, border-color 0.3s; border-radius: 5px; outline: none; text-transform: uppercase;'>
+                    <a href='{urlInicio}' style='display: inline-block; text-decoration: none; font-size: 16px; font-family: Arial; color: white; background-color: #572364; border: 2px solid #572364; padding: 10px 20px; font-weight: bold; cursor: pointer; transition: background-color 0.3s, color 0.3s, border-color 0.3s; border-radius: 5px; outline: none; text-transform: uppercase;'>
                         Iniciar sesión
                     </a>
                 </div>
@@ -250,8 +250,7 @@ namespace Negocio.Gestion
                     Celular = f.Celular,
                     CorreoElectronico = f.CorreoElectronico,
                     Vigente = f.Vigente,
-                    IngresoPrimeraVez = f.IngresoPrimeraVez,
-                    Externo = f.Externo
+                    IngresoPrimeraVez = f.IngresoPrimeraVez
 
                 }).OrderBy(o => o.Nombres).ToListAsync();
 
@@ -281,8 +280,7 @@ namespace Negocio.Gestion
                         Celular = f.Celular,
                         CorreoElectronico = f.CorreoElectronico,
                         Vigente = f.Vigente,
-                        IngresoPrimeraVez = f.IngresoPrimeraVez,
-                        Externo = f.Externo
+                        IngresoPrimeraVez = f.IngresoPrimeraVez
                     },
                     Roles = db.TaRolUsuarioModel.Where(x => x.UsuarioId == f.UsuarioId && x.TaRolModel.Vigente == true).Select(r => new RRolUsuarioDto
                     {
@@ -312,7 +310,7 @@ namespace Negocio.Gestion
             DateTime fecha = DateTime.Now;
             var body = $@"
                     <div style='font-size: 16px; font-family: Arial; font-style: italic; color: #333; font-weight: bold; text-align: left; margin-top: 20px;'>
-                        Bogotá D.C., {fecha.ToLongDateString()}
+                        Santa María - Huila, {fecha.ToLongDateString()}
                     </div>
                     <br />
                     <div style='font-size: 16px; font-family: Arial; font-style: italic; color: #333; font-weight: bold; text-align: left; margin-top: 10px;'>
@@ -330,10 +328,10 @@ namespace Negocio.Gestion
                     </div>
                     <br />
                      <div style='margin-top: 10px; margin-bottom: 10px;'>
-                    <a href='{urlInicio}' style='display: inline-block; text-decoration: none; font-size: 16px; font-family: Arial; color: white; background-color: #1E1464; border: 2px solid #1E1464; padding: 10px 20px; font-weight: bold; cursor: pointer; transition: background-color 0.3s, color 0.3s, border-color 0.3s; border-radius: 5px; outline: none; text-transform: uppercase;' onmouseover='this.style.backgroundColor = &quot;#1E1464&quot;; this.style.borderColor = &quot;#1E1464&quot;;' onmouseout='this.style.backgroundColor = &quot;#1E1464&quot;; this.style.borderColor = &quot;#1E1464&quot;;'>
-                        Iniciar sesión
-                    </a>
-                </div>
+                        <a href='{urlInicio}' style='display: inline-block; text-decoration: none; font-size: 16px; font-family: Arial; color: white; background-color: #572364; border: 2px solid #572364; padding: 10px 20px; font-weight: bold; cursor: pointer; transition: background-color 0.3s, color 0.3s, border-color 0.3s; border-radius: 5px; outline: none; text-transform: uppercase;'>
+                            Iniciar sesión
+                        </a>
+                    </div>
                     <div style='font-size: 16px; font-family: Arial; color: #333; text-align: justify; margin-top: 20px;'>
                         Estos datos le permitirán acceder al sistema de acuerdo a los roles que le han sido asignados. Recuerde que esta información es confidencial, exclusivamente para usted y no debe compartirla con nadie más. Una vez ingrese al sistema deberá cambiar la contraseña.                </div>
                     </div>
