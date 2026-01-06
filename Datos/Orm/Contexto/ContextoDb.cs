@@ -20,6 +20,8 @@ namespace Datos.Orm.Contexto
         public DbSet<TaZonaGeograficaModel> TaZonaGeograficaModel { get; set; }
         public DbSet<TaDominioModel> TaDominioModel { get; set; }
         public DbSet<TaProductoModel> TaProductoModel { get; set; }
+        public DbSet<TaOrdenModel> TaOrdenModel { get; set; }
+        public DbSet<TaItemModel> TaItemModel { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -34,6 +36,8 @@ namespace Datos.Orm.Contexto
             modelBuilder.ApplyConfiguration(new TaZonaGeograficaModelEtc());
             modelBuilder.ApplyConfiguration(new TaDominioModelEtc());
             modelBuilder.ApplyConfiguration(new TaProductoModelEtc());
+            modelBuilder.ApplyConfiguration(new TaOrdenModelEtc());
+            modelBuilder.ApplyConfiguration(new TaItemModelEtc());
         }
 
     }

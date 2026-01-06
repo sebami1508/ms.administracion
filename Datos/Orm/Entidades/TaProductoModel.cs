@@ -12,6 +12,7 @@
 
 
         public TaDominioModel TaDominioModel { get; set; } = null!;
+        public ICollection<TaItemModel> LtsTaItemModel { get; set; } = new List<TaItemModel>();
 
         #endregion
     }

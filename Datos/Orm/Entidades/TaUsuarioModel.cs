@@ -16,6 +16,7 @@
 
         public ICollection<TaRolUsuarioModel> LtsTaRolesModel { get; set; }
         public ICollection<TaAuditoriaModel> LtsTaAuditoria { get; set; }
+        public ICollection<TaOrdenModel> LtsTaOrdenModel { get; set; }
 
         #endregion
     }

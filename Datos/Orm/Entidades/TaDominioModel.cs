@@ -9,9 +9,10 @@
         public string? PadreId { get; set; }
         public bool Vigente { get; set; }
 
-        public virtual TaDominioModel? Padre { get; set; }
-        public virtual ICollection<TaDominioModel> LtsHijos { get; set; } = new List<TaDominioModel>();
-        public virtual ICollection<TaProductoModel> LtsTaProductoModel { get; set; } = new List<TaProductoModel>();
+        public TaDominioModel? Padre { get; set; }
+        public ICollection<TaDominioModel> LtsHijos { get; set; } = new List<TaDominioModel>();
+        public ICollection<TaProductoModel> LtsTaProductoModel { get; set; } = new List<TaProductoModel>();
+        public ICollection<TaOrdenModel> LtsTaOrdenModel { get; set; } = new List<TaOrdenModel>();
 
         #endregion
     }
