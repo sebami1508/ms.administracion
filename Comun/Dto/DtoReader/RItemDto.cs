@@ -1,3 +1,5 @@
+using Comun.Dto.DtoParameter;
+
 namespace Comun.Dto.DtoReader
 {
     public class RItemDto
@@ -8,5 +10,8 @@ namespace Comun.Dto.DtoReader
         public int Cantidad { get; set; }
         public decimal Subtotal { get; set; }
         public string ProductoDescripcion { get; set; }
+        public string? CategoriaId { get; set; }
+        public string? CategoriaIdStr { get; set; }
+        public List<RPizzaDto>? Caracteristicas { get; set; } = new List<RPizzaDto>();
     }
 }

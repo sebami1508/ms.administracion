@@ -39,7 +39,6 @@ namespace Datos.Orm.Configuracion
                 .WithMany(p => p.LtsTaItemModel)
                 .HasForeignKey(d => d.ProductoId)
                 .HasConstraintName("FK_PRODUCTO_ID_ITEM");
-
         }
     }
 }

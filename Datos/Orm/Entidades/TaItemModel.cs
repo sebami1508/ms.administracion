@@ -10,5 +10,6 @@
 
         public TaOrdenModel TaOrdenModel { get; set; }
         public TaProductoModel TaProductoModel { get; set; }
+        public ICollection<TaPizzaModel> LtsTaPizzaModel { get; set; }
     }
 }

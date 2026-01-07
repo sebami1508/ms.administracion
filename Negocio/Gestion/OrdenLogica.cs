@@ -43,32 +43,63 @@ namespace Negocio.Gestion
 
             try
             {
+                var ordenId = Guid.NewGuid().ToString();
 
                 var model = new TaOrdenModel
                 {
-                    OrdenId = dto.OrdenId,
+                    OrdenId = ordenId,
                     CantidadItem = dto.CantidadItem,
                     Total = dto.Total,
                     UsuarioId = dto.UsuarioId?.Trim(),
                     EstadoId = Constantes.Pendiente,
                     Mesa = dto.Mesa,
-                    Codigo = GenerarCodigoOrden(),
+                    Codigo = dto.Codigo,
                     Vigente = true,
-                    FechaRegistro = DateTime.UtcNow
+                    FechaRegistro = DateTime.UtcNow,
+                    Domicilio = dto.Domicilio,
+                    Cliente = dto.Cliente,
+                    Direccion = dto.Direccion
                 };
 
                 await db.AddAsync(model);
 
-                var items = dto.Productos.Select(p => new TaItemModel
+                var items = new List<TaItemModel>();
+                var pizzas = new List<TaPizzaModel>();
+
+                foreach (var p in dto.Productos)
                 {
-                    ItemId = Guid.NewGuid().ToString(),
-                    OrdenId = p.OrdenId,
-                    ProductoId = p.ProductoId,
-                    Cantidad = p.Cantidad,
-                    Subtotal = p.Subtotal
-                }).ToList();
+                    var newItemId = Guid.NewGuid().ToString();
+
+                    var item = new TaItemModel
+                    {
+                        ItemId = newItemId,
+                        OrdenId = ordenId,
+                        ProductoId = p.ProductoId,
+                        Cantidad = p.Cantidad,
+                        Subtotal = p.Subtotal
+                    };
+
+                    items.Add(item);
+
+                    if (p.Caracteristicas != null && p.Caracteristicas.Any())
+                    {
+                        foreach (var c in p.Caracteristicas)
+                        {
+                            pizzas.Add(new TaPizzaModel
+                            {
+                                PizzaId = Guid.NewGuid().ToString(),
+                                ItemId = newItemId,
+                                TipoId = c.TipoId,
+                                SaborId = c.SaborId
+                            });
+                        }
+                    }
+                }
 
                 await db.AddRangeAsync(items);
+
+                if (pizzas.Count > 0)
+                    await db.AddRangeAsync(pizzas);
 
                 var auditoria = new GestionAuditoriaLogica(db);
                 bool guardado = await auditoria.SaveChangesAsync(dto.ParametrosAuditoriaDto);
@@ -172,18 +203,36 @@ namespace Negocio.Gestion
                     UsuarioIdStr = $"{o.TaUsuarioModel.Nombres} {o.TaUsuarioModel.Apellidos}",
                     EstadoId = o.EstadoId,
                     EstadoIdStr = o.TaDominioModel.Descripcion,
+                    Codigo = o.Codigo,
                     FechaRegistro = o.FechaRegistro,
                     Mesa = o.Mesa,
-                    Codigo = o.Codigo,
-                    Productos = o.LtsTaItemModel
-                        .OrderBy(i => i.TaProductoModel.TaDominioModel.Descripcion)
+                    Domicilio = o.Domicilio,
+                    Cliente = o.Cliente,
+                    Direccion = o.Direccion,
+                    MetodoPagoId = o.MetodoPagoId,
+                    MetodoPagoIdStr = o.TaDominioModel2.Descripcion,
+                    Productos = o.LtsTaItemModel.OrderBy(i => i.TaProductoModel.TaDominioModel.Descripcion)
                         .Select(i => new RItemDto
                         {
                             ItemId = i.ItemId,
+                            OrdenId = i.OrdenId,
                             ProductoId = i.ProductoId,
                             ProductoDescripcion = i.TaProductoModel.Descripcion,
+                            CategoriaId = i.TaProductoModel.CategoriaId,
+                            CategoriaIdStr = i.TaProductoModel.TaDominioModel.Descripcion,
                             Cantidad = i.Cantidad,
-                            Subtotal = i.Subtotal
+                            Subtotal = i.Subtotal,
+                            Caracteristicas = i.LtsTaPizzaModel
+                                .Select(pz => new RPizzaDto
+                                {
+                                    PizzaId = pz.PizzaId,
+                                    ItemId = pz.ItemId,
+                                    TipoId = pz.TipoId,
+                                    TipoIdStr = pz.TaDominioModelTipo.Descripcion,
+                                    SaborId = pz.SaborId,
+                                    SaborIdStr = pz.TaDominioModelSabor.Descripcion
+                                })
+                                .ToList()
                         })
                         .ToList()
                 })
@@ -217,15 +266,33 @@ namespace Negocio.Gestion
                     Codigo = o.Codigo,
                     FechaRegistro = o.FechaRegistro,
                     Mesa = o.Mesa,
-                    Productos = o.LtsTaItemModel
-                    .OrderBy(i => i.TaProductoModel.TaDominioModel.Descripcion)
+                    Domicilio = o.Domicilio,
+                    Cliente = o.Cliente,
+                    Direccion = o.Direccion,
+                    MetodoPagoId = o.MetodoPagoId,
+                    MetodoPagoIdStr = o.TaDominioModel2.Descripcion,
+                    Productos = o.LtsTaItemModel.OrderBy(i => i.TaProductoModel.TaDominioModel.Descripcion)
                         .Select(i => new RItemDto
                         {
                             ItemId = i.ItemId,
+                            OrdenId = i.OrdenId,
                             ProductoId = i.ProductoId,
                             ProductoDescripcion = i.TaProductoModel.Descripcion,
+                            CategoriaId = i.TaProductoModel.CategoriaId,
+                            CategoriaIdStr = i.TaProductoModel.TaDominioModel.Descripcion,
                             Cantidad = i.Cantidad,
-                            Subtotal = i.Subtotal
+                            Subtotal = i.Subtotal,
+                            Caracteristicas = i.LtsTaPizzaModel
+                                .Select(pz => new RPizzaDto
+                                {
+                                    PizzaId = pz.PizzaId,
+                                    ItemId = pz.ItemId,
+                                    TipoId = pz.TipoId,
+                                    TipoIdStr = pz.TaDominioModelTipo.Descripcion,
+                                    SaborId = pz.SaborId,
+                                    SaborIdStr = pz.TaDominioModelSabor.Descripcion
+                                })
+                                .ToList()
                         })
                         .ToList()
                 })
@@ -259,15 +326,33 @@ namespace Negocio.Gestion
                     Codigo = o.Codigo,
                     FechaRegistro = o.FechaRegistro,
                     Mesa = o.Mesa,
-                    Productos = o.LtsTaItemModel
-                    .OrderBy(i => i.TaProductoModel.TaDominioModel.Descripcion)
+                    Domicilio = o.Domicilio,
+                    Cliente = o.Cliente,
+                    Direccion = o.Direccion,
+                    MetodoPagoId = o.MetodoPagoId,
+                    MetodoPagoIdStr = o.TaDominioModel2.Descripcion,
+                    Productos = o.LtsTaItemModel.OrderBy(i => i.TaProductoModel.TaDominioModel.Descripcion)
                         .Select(i => new RItemDto
                         {
                             ItemId = i.ItemId,
+                            OrdenId = i.OrdenId,
                             ProductoId = i.ProductoId,
                             ProductoDescripcion = i.TaProductoModel.Descripcion,
+                            CategoriaId = i.TaProductoModel.CategoriaId,
+                            CategoriaIdStr = i.TaProductoModel.TaDominioModel.Descripcion,
                             Cantidad = i.Cantidad,
-                            Subtotal = i.Subtotal
+                            Subtotal = i.Subtotal,
+                            Caracteristicas = i.LtsTaPizzaModel
+                                .Select(pz => new RPizzaDto
+                                {
+                                    PizzaId = pz.PizzaId,
+                                    ItemId = pz.ItemId,
+                                    TipoId = pz.TipoId,
+                                    TipoIdStr = pz.TaDominioModelTipo.Descripcion,
+                                    SaborId = pz.SaborId,
+                                    SaborIdStr = pz.TaDominioModelSabor.Descripcion
+                                })
+                                .ToList()
                         })
                         .ToList()
                 })
@@ -289,11 +374,12 @@ namespace Negocio.Gestion
             var dto = _param as PFiltroOrdenesDto;
             var query = db.TaOrdenModel.AsQueryable().AsNoTracking();
 
-            DateTime fechaInicio = dto.FechaInicio.Date;
-            DateTime fechaFin = new DateTime(dto.FechaFin.Year, dto.FechaFin.Month, dto.FechaFin.Day, 23, 59, 59);
+            DateTime fechaInicio = DateTime.SpecifyKind(dto.FechaInicio.Date, DateTimeKind.Utc);
+            DateTime fechaFin = new DateTime(dto.FechaFin.Year, dto.FechaFin.Month, dto.FechaFin.Day, 23, 59, 59, DateTimeKind.Utc);
             query = query.Where(i => i.FechaRegistro >= fechaInicio && i.FechaRegistro <= fechaFin);
 
             var resultados = await query
+                .Where(x => x.EstadoId == Constantes.Facturada)
                 .OrderBy(o => o.FechaRegistro)
                 .Select(o => new ROrdenDto
                 {
@@ -307,14 +393,33 @@ namespace Negocio.Gestion
                     Codigo = o.Codigo,
                     FechaRegistro = o.FechaRegistro,
                     Mesa = o.Mesa,
+                    Domicilio = o.Domicilio,
+                    Cliente = o.Cliente,
+                    Direccion = o.Direccion,
+                    MetodoPagoId = o.MetodoPagoId,
+                    MetodoPagoIdStr = o.TaDominioModel2.Descripcion,
                     Productos = o.LtsTaItemModel.OrderBy(i => i.TaProductoModel.TaDominioModel.Descripcion)
                         .Select(i => new RItemDto
                         {
                             ItemId = i.ItemId,
+                            OrdenId = i.OrdenId,
                             ProductoId = i.ProductoId,
                             ProductoDescripcion = i.TaProductoModel.Descripcion,
+                            CategoriaId = i.TaProductoModel.CategoriaId,
+                            CategoriaIdStr = i.TaProductoModel.TaDominioModel.Descripcion,
                             Cantidad = i.Cantidad,
-                            Subtotal = i.Subtotal
+                            Subtotal = i.Subtotal,
+                            Caracteristicas = i.LtsTaPizzaModel
+                                .Select(pz => new RPizzaDto
+                                {
+                                    PizzaId = pz.PizzaId,
+                                    ItemId = pz.ItemId,
+                                    TipoId = pz.TipoId,
+                                    TipoIdStr = pz.TaDominioModelTipo.Descripcion,
+                                    SaborId = pz.SaborId,
+                                    SaborIdStr = pz.TaDominioModelSabor.Descripcion
+                                })
+                                .ToList()
                         })
                         .ToList()
                 })

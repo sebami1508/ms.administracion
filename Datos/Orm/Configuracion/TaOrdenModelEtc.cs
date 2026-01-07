@@ -47,6 +47,17 @@ namespace Datos.Orm.Configuracion
                .HasColumnName("METODO_PAGO")
                .HasMaxLength(40);
 
+            entity.Property(e => e.Cliente)
+             .HasColumnName("CLIENTE")
+             .HasMaxLength(80);
+
+            entity.Property(e => e.Direccion)
+             .HasColumnName("DIRECCION")
+             .HasMaxLength(100);
+
+            entity.Property(e => e.Domicilio)
+                .HasColumnName("DOMICILIO");
+
             entity.HasOne(d => d.TaUsuarioModel)
                 .WithMany(p => p.LtsTaOrdenModel)
                 .HasForeignKey(d => d.UsuarioId)
@@ -56,6 +67,11 @@ namespace Datos.Orm.Configuracion
                 .WithMany(p => p.LtsTaOrdenModel)
                 .HasForeignKey(d => d.EstadoId)
                 .HasConstraintName("FK_ESTADO_ID_ORDEN");
+
+            entity.HasOne(d => d.TaDominioModel2)
+             .WithMany(p => p.LtsTaOrdenModel2)
+             .HasForeignKey(d => d.MetodoPagoId)
+             .HasConstraintName("FK_METODO_PAGO_ORDEN");
 
         }
     }
