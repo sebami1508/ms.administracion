@@ -19,7 +19,8 @@ namespace Comun.Dto.DtoReader
         public string? Direccion { get; set; }
         public string? MetodoPagoId { get; set; }
         public string? MetodoPagoIdStr { get; set; }
+        public string? NumeroFactura { get; set; }
         public List<RItemDto>? Productos { get; set; } = new List<RItemDto>();
-
+        
     }
 }

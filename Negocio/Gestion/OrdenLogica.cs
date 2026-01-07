@@ -14,17 +14,20 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Negocio.Gestion
 {
+
     public class OrdenLogica : IOrden
     {
         private readonly ContextoDb db;
         private readonly COrdenValidator validatorC;
         private readonly UOrdenValidator validatorU;
+        private readonly IFacturacionService _facturacion;
 
-        public OrdenLogica(ContextoDb _db)
+        public OrdenLogica(ContextoDb _db, IFacturacionService facturacion)
         {
             db = _db;
             validatorC = new COrdenValidator();
             validatorU = new UOrdenValidator();
+            _facturacion = facturacion ?? throw new ArgumentNullException(nameof(facturacion));
         }
 
         public async Task<RespuestaDto<TReturn>> GuardarAsync<TParam, TReturn>(TParam param)
@@ -120,22 +123,6 @@ namespace Negocio.Gestion
             }
         }
 
-        private string GenerarCodigoOrden()
-        {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            var buffer = new byte[6];
-
-            RandomNumberGenerator.Fill(buffer);
-
-            var sb = new StringBuilder(10);
-            sb.Append("BRA-");
-
-            foreach (var b in buffer)
-                sb.Append(chars[b % chars.Length]);
-
-            return sb.ToString();
-        }
-
         public async Task<RespuestaDto<TReturn>> ActualizarAsync<TParam, TReturn>(TParam param)
         {
             if (param is not UOrdenDto dto)
@@ -158,17 +145,37 @@ namespace Negocio.Gestion
             if (!string.IsNullOrWhiteSpace(dto.EstadoId))
                 model.EstadoId = dto.EstadoId.Trim();
 
+            string? numeroFacturaGenerado = null;
+
             if (!string.IsNullOrWhiteSpace(dto.MetodoPagoId))
+            {
                 model.MetodoPagoId = dto.MetodoPagoId.Trim();
+
+                if (string.IsNullOrWhiteSpace(model.NumeroFactura))
+                {
+                    numeroFacturaGenerado = await _facturacion.GenerarNumeroFacturaAsync();
+                    model.NumeroFactura = numeroFacturaGenerado;
+                }
+            }
 
             var auditoria = new GestionAuditoriaLogica(db);
             auditoria.ActualizarCamposAutomatico(dto, model);
+
             var ok = await auditoria.SaveChangesAsync(dto.ParametrosAuditoriaDto);
 
-            return ok
-                ? new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.")
-                : new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
+            if (!ok)
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
+
+            if (!string.IsNullOrWhiteSpace(numeroFacturaGenerado))
+                return new RespuestaDto<TReturn>(
+                    EstadoOperacion.Bueno,
+                    "Factura generada correctamente.",
+                    (TReturn)(object)numeroFacturaGenerado
+                );
+
+            return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
         }
+
 
 
         public async Task<RespuestaDto<TReturn>> EliminarAsync<TParam, TReturn>(TParam _param)
@@ -211,6 +218,7 @@ namespace Negocio.Gestion
                     Direccion = o.Direccion,
                     MetodoPagoId = o.MetodoPagoId,
                     MetodoPagoIdStr = o.TaDominioModel2.Descripcion,
+                    NumeroFactura = o.NumeroFactura,
                     Productos = o.LtsTaItemModel.OrderBy(i => i.TaProductoModel.TaDominioModel.Descripcion)
                         .Select(i => new RItemDto
                         {
@@ -271,6 +279,7 @@ namespace Negocio.Gestion
                     Direccion = o.Direccion,
                     MetodoPagoId = o.MetodoPagoId,
                     MetodoPagoIdStr = o.TaDominioModel2.Descripcion,
+                    NumeroFactura = o.NumeroFactura,
                     Productos = o.LtsTaItemModel.OrderBy(i => i.TaProductoModel.TaDominioModel.Descripcion)
                         .Select(i => new RItemDto
                         {
@@ -331,6 +340,7 @@ namespace Negocio.Gestion
                     Direccion = o.Direccion,
                     MetodoPagoId = o.MetodoPagoId,
                     MetodoPagoIdStr = o.TaDominioModel2.Descripcion,
+                    NumeroFactura = o.NumeroFactura,
                     Productos = o.LtsTaItemModel.OrderBy(i => i.TaProductoModel.TaDominioModel.Descripcion)
                         .Select(i => new RItemDto
                         {
@@ -398,6 +408,7 @@ namespace Negocio.Gestion
                     Direccion = o.Direccion,
                     MetodoPagoId = o.MetodoPagoId,
                     MetodoPagoIdStr = o.TaDominioModel2.Descripcion,
+                    NumeroFactura = o.NumeroFactura,
                     Productos = o.LtsTaItemModel.OrderBy(i => i.TaProductoModel.TaDominioModel.Descripcion)
                         .Select(i => new RItemDto
                         {

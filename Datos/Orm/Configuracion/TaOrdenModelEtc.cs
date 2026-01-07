@@ -58,6 +58,10 @@ namespace Datos.Orm.Configuracion
             entity.Property(e => e.Domicilio)
                 .HasColumnName("DOMICILIO");
 
+            entity.Property(e => e.NumeroFactura)
+            .HasColumnName("NUM_FACTURA")
+            .HasMaxLength(10);
+
             entity.HasOne(d => d.TaUsuarioModel)
                 .WithMany(p => p.LtsTaOrdenModel)
                 .HasForeignKey(d => d.UsuarioId)

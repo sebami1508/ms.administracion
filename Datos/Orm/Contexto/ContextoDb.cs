@@ -23,6 +23,7 @@ namespace Datos.Orm.Contexto
         public DbSet<TaOrdenModel> TaOrdenModel { get; set; }
         public DbSet<TaItemModel> TaItemModel { get; set; }
         public DbSet<TaPizzaModel> TaPizzaModel { get; set; }
+        public DbSet<TaConsecutivoFacturaModel> TaConsecutivoFacturaModel { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -41,6 +42,7 @@ namespace Datos.Orm.Contexto
             modelBuilder.ApplyConfiguration(new TaItemModelEtc());
             modelBuilder.ApplyConfiguration(new TaItemModelEtc());
             modelBuilder.ApplyConfiguration(new TaPizzaModelEtc());
+            modelBuilder.ApplyConfiguration(new TaConsecutivoFacturaModelEtc());
         }
 
     }

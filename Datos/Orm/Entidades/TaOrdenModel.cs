@@ -15,6 +15,7 @@
         public bool Domicilio { get; set; }
         public string? Cliente { get; set; }
         public string? Direccion { get; set; }
+        public string? NumeroFactura { get; set; }
 
         public TaUsuarioModel TaUsuarioModel { get; set; }
         public TaDominioModel TaDominioModel { get; set; }

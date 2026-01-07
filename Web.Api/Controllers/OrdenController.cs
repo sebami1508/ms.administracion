@@ -32,7 +32,7 @@ namespace WebApi.Controllers
         [Route("[Action]")]
         public async Task<IActionResult> Actualizar(UOrdenDto? _param)
         {
-            return Ok(await orden.ActualizarAsync<UOrdenDto, bool>(_param));
+            return Ok(await orden.ActualizarAsync<UOrdenDto, string>(_param));
         }
 
         [HttpDelete]

@@ -39,6 +39,7 @@ namespace Web.Api.Extension
             _builder.Services.AddScoped<IProducto, ProductoLogica>();
             _builder.Services.AddScoped<IOrden, OrdenLogica>();
             _builder.Services.AddScoped<IItem, ItemLogica>();
+            _builder.Services.AddScoped<IFacturacionService, FacturacionService>();
         }
     }
 }
