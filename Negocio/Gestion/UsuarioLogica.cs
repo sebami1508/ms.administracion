@@ -105,42 +105,51 @@ namespace Negocio.Gestion
         private string CrearCuerpoCorreo(string nombres, string apellidos, decimal? identificacion, string password, string urlInicio)
         {
             var fecha = DateTime.Now;
+
             return $@"
-                <div style='font-size: 16px; font-family: Arial; font-style: italic; color: #333; font-weight: bold; text-align: left; margin-top: 20px;'>
-                    Santa María - Huila, {fecha.ToLongDateString()}
-                </div>
-                <br />
-                <div style='font-size: 16px; font-family: Arial; font-style: italic; color: #333; font-weight: bold; text-align: left; margin-top: 10px;'>
-                    Estimado(a) {nombres} {apellidos}
-                </div>
-                <div style='font-size: 16px; font-family: Arial; color: #333; text-align: justify; font-weight: normal; margin-top: 20px;'>
-                    Queremos informarle que le hemos creado un usuario para el sistema de BRADAMELA. A continuación, encontrará los detalles de acceso:
-                </div>
-                <br />
-                <div style='font-size: 16px; font-family: Arial; color: #333; text-align: left; margin-top: 20px;'>
-                    <strong>Usuario:</strong> {identificacion}
-                </div>
-                <div style='font-size: 16px; font-family: Arial; color: #333; text-align: left; margin-top: 10px;'>
-                    <strong>Contraseña:</strong> {password}
-                </div>
-                <br />
-                <br />
-                <div style='font-size: 16px; font-family: Arial; color: #333; text-align: justify; margin-top: 20px;'>
-                    Estos datos le permitirán acceder al sistema de acuerdo a los roles que le han sido asignados. Recuerde que esta información es confidencial, exclusivamente para usted y no debe compartirla con nadie más. Una vez ingrese al sistema deberá cambiar la contraseña.                
-                </div>
-                <div style='margin-top: 10px; margin-bottom: 10px;'>
-                    <a href='{urlInicio}' style='display: inline-block; text-decoration: none; font-size: 16px; font-family: Arial; color: white; background-color: #572364; border: 2px solid #572364; padding: 10px 20px; font-weight: bold; cursor: pointer; transition: background-color 0.3s, color 0.3s, border-color 0.3s; border-radius: 5px; outline: none; text-transform: uppercase;'>
-                        Iniciar sesión
-                    </a>
-                </div>
-                <div style='margin-top: 30px;'>
-                    <img src='cid:logo' alt='Logo' style='width: 300px; height: auto;' />
-                </div>
-                <div style='font-family: Arial; font-size: 12px; color: #666; text-align: center; margin-top: 20px;'>
-                    *Por favor, no responda a este mensaje. Ha sido generado automáticamente por el sistema.
-                </div>
-            ";
+                <div style='font-family: Arial, Helvetica, sans-serif; color:#333; font-size:15px; line-height:1.6;'>
+
+                    <div style='font-weight:bold; margin-top:10px;'>
+                        {_myConfig.Municipio}, {fecha.ToLongDateString()}
+                    </div>
+
+                    <div style='margin-top:20px; font-weight:bold;'>
+                        Estimado(a) {nombres} {apellidos},
+                    </div>
+
+                    <div style='margin-top:15px; text-align:justify;'>
+                        Le informamos que se ha creado su usuario de acceso al sistema BRADAMELA.
+                        A continuación encontrará sus credenciales iniciales:
+                    </div>
+
+                    <div style='margin-top:20px; padding:15px; border:1px solid #ccc; border-radius:6px; background:#f7f7f7;'>
+                        <div><strong>Usuario:</strong> {identificacion}</div>
+                        <div style='margin-top:8px;'><strong>Contraseña temporal:</strong> {password}</div>
+                    </div>
+
+                    <div style='margin-top:20px;'>
+                        <a href='{urlInicio}'
+                           style='display:inline-block; padding:10px 22px; background:#572364; color:#fff;
+                                  text-decoration:none; border-radius:6px; font-weight:bold; text-transform:uppercase;'>
+                            Iniciar sesión
+                        </a>
+                    </div>
+
+                    <div style='margin-top:20px; text-align:justify;'>
+                        El acceso al sistema se encuentra condicionado a los roles y permisos asignados.
+                        Por motivos de seguridad, esta contraseña es de carácter temporal y deberá ser cambiada
+                        una vez ingrese al sistema. Recuerde que esta información es personal y confidencial,
+                        por lo que no debe compartirla con terceros.
+                    </div>
+
+                    <div style='margin-top:25px; font-size:12px; color:#666; text-align:center;'>
+                        Este mensaje ha sido generado automáticamente por el sistema.
+                        Por favor, no responda a este correo.
+                    </div>
+
+                </div>";
         }
+
 
         public async Task<RespuestaDto<TReturn>> ActualizarAsync<TParam, TReturn>(TParam _param)
         {
@@ -298,50 +307,59 @@ namespace Negocio.Gestion
 
         public async Task<RespuestaDto<TReturn>> EnviarNuevaPasswordAsync<TParam, TReturn>(TParam _param)
         {
-            var dto = _param as UUsuarioDto;
+            var usuarioId = _param as string;
             string password = UtilidadesLogica.GenerarPassword();
             string urlInicio = _myConfig.UrlInicioSesion;
 
-            var model = await db.TaUsuarioModel.FindAsync(dto.UsuarioId);
+            var model = await db.TaUsuarioModel.FindAsync(usuarioId);
 
             if (model == null)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No existe el usuario.");
 
             DateTime fecha = DateTime.Now;
             var body = $@"
-                    <div style='font-size: 16px; font-family: Arial; font-style: italic; color: #333; font-weight: bold; text-align: left; margin-top: 20px;'>
-                        Santa María - Huila, {fecha.ToLongDateString()}
-                    </div>
-                    <br />
-                    <div style='font-size: 16px; font-family: Arial; font-style: italic; color: #333; font-weight: bold; text-align: left; margin-top: 10px;'>
-                        Estimado(a) {model.Nombres} {model.Apellidos}
-                    </div>
-                    <div style='font-size: 16px; font-family: Arial; color: #333; text-align: justify; font-weight: normal; margin-top: 20px;'>
-                        Queremos informarle que hemos restablecido su contraseña. A continuación, encontrará los detalles de la nueva contraseña, la cual deberá cambiar una vez ingrese al sistema:
-                    </div>
-                    <br />
-                    <div style='font-size: 16px; font-family: Arial; color: #333; text-align: left; margin-top: 20px;'>
-                        <strong>Usuario:</strong> {model.Identificacion}
-                    </div>
-                    <div style='font-size: 16px; font-family: Arial; color: #333; text-align: left; margin-top: 10px;'>
-                        <strong>Contraseña:</strong> {password}
-                    </div>
-                    <br />
-                     <div style='margin-top: 10px; margin-bottom: 10px;'>
-                        <a href='{urlInicio}' style='display: inline-block; text-decoration: none; font-size: 16px; font-family: Arial; color: white; background-color: #572364; border: 2px solid #572364; padding: 10px 20px; font-weight: bold; cursor: pointer; transition: background-color 0.3s, color 0.3s, border-color 0.3s; border-radius: 5px; outline: none; text-transform: uppercase;'>
-                            Iniciar sesión
-                        </a>
-                    </div>
-                    <div style='font-size: 16px; font-family: Arial; color: #333; text-align: justify; margin-top: 20px;'>
-                        Estos datos le permitirán acceder al sistema de acuerdo a los roles que le han sido asignados. Recuerde que esta información es confidencial, exclusivamente para usted y no debe compartirla con nadie más. Una vez ingrese al sistema deberá cambiar la contraseña.                </div>
-                    </div>
-                <div style='margin-top: 30px;'>
-                        <img src='cid:logo' alt='Logo' style='width: 300px; height: auto;' />
+            <div style='font-family: Arial, Helvetica, sans-serif; color:#333; font-size: 15px; line-height: 1.6;'>
+
+                <div style='margin-top: 10px; font-weight: bold;'>
+                   {_myConfig.Municipio}, {fecha.ToLongDateString()}
                 </div>
-                <div style='font-family: Arial; font-size: 12px; color: #666; text-align: center; margin-top: 20px;'>
-                    *Por favor, no responda a este mensaje. Ha sido generado automáticamente por el sistema de ASOMUFFAA UNIOX.                    
+
+                <div style='margin-top: 20px; font-weight: bold;'>
+                    Estimado(a) {model.Nombres} {model.Apellidos},
                 </div>
-            ";
+
+                <div style='margin-top: 15px; text-align: justify;'>
+                    Le informamos que su contraseña ha sido restablecida correctamente. A continuación,
+                    encontrará las credenciales temporales de acceso. Por motivos de seguridad,
+                    deberá cambiar la contraseña una vez inicie sesión en el sistema.
+                </div>
+
+                <div style='margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 6px; background:#f7f7f7;'>
+                    <div><strong>Usuario:</strong> {model.Identificacion}</div>
+                    <div style='margin-top: 8px;'><strong>Contraseña temporal:</strong> {password}</div>
+                </div>
+
+                <div style='margin-top: 20px;'>
+                    <a href='{urlInicio}'
+                       style='display:inline-block; padding:10px 22px; background:#572364; color:#fff;
+                              text-decoration:none; border-radius:6px; font-weight:bold; text-transform:uppercase;'>
+                        Iniciar sesión
+                    </a>
+                </div>
+
+                <div style='margin-top: 20px; text-align: justify;'>
+                    El acceso al sistema se encuentra condicionado a los roles y permisos asignados.
+                    Recuerde que esta información es confidencial y de uso personal; no debe ser compartida
+                    bajo ninguna circunstancia.
+                </div>
+
+                <div style='margin-top: 25px; font-size: 12px; color:#666; text-align:center;'>
+                    Este mensaje ha sido generado automáticamente por el sistema BRADAMELA POS.
+                    Por favor, no responda a este correo.
+                </div>
+
+            </div>";
+
 
             var (exito, mensaje) = UtilidadesLogica.EnviarCorreo(_myConfig.CorreoNotificacion, _myConfig.PasswordCorreo, model.CorreoElectronico, "Notificación restablecimiento contraseña", body);
 
@@ -354,7 +372,7 @@ namespace Negocio.Gestion
             model.IngresoPrimeraVez = true;
             db.Update(model);
 
-            bool resultado = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto);
+            bool resultado = await db.SaveChangesAsync() > 0;
 
             if (resultado)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");

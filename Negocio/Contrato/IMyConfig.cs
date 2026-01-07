@@ -6,6 +6,7 @@
         public string UrlInicioSesion { get; set; }
         public string CorreoNotificacion { get; set; }
         public string PasswordCorreo { get; set; }
+        public string Municipio { get; set; }
 
     }
 }
