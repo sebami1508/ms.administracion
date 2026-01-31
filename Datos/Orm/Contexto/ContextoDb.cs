@@ -22,7 +22,7 @@ namespace Datos.Orm.Contexto
         public DbSet<TaProductoModel> TaProductoModel { get; set; }
         public DbSet<TaOrdenModel> TaOrdenModel { get; set; }
         public DbSet<TaItemModel> TaItemModel { get; set; }
-        public DbSet<TaPizzaModel> TaPizzaModel { get; set; }
+        public DbSet<TaCaracteristicaModel> TaPizzaModel { get; set; }
         public DbSet<TaConsecutivoFacturaModel> TaConsecutivoFacturaModel { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -41,9 +41,26 @@ namespace Datos.Orm.Contexto
             modelBuilder.ApplyConfiguration(new TaOrdenModelEtc());
             modelBuilder.ApplyConfiguration(new TaItemModelEtc());
             modelBuilder.ApplyConfiguration(new TaItemModelEtc());
-            modelBuilder.ApplyConfiguration(new TaPizzaModelEtc());
+            modelBuilder.ApplyConfiguration(new TaCaracteristicaModelEtc());
             modelBuilder.ApplyConfiguration(new TaConsecutivoFacturaModelEtc());
-        }
 
+            modelBuilder.Entity<TaOrdenModel>()
+            .Property(x => x.FechaRegistro)
+            .HasColumnType("timestamp without time zone");
+
+            modelBuilder.Entity<TaAuditoriaModel>()
+                .Property(x => x.Fecha)
+                .HasColumnType("timestamp without time zone");
+
+            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            {
+                foreach (var prop in entityType.GetProperties())
+                {
+                    var baseClr = Nullable.GetUnderlyingType(prop.ClrType) ?? prop.ClrType;
+                    if (baseClr == typeof(DateTime))
+                        prop.SetColumnType("timestamp without time zone");
+                }
+            }
+        }
     }
 }

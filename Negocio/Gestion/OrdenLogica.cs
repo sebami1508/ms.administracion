@@ -8,20 +8,20 @@ using Microsoft.EntityFrameworkCore;
 using Negocio.Contrato;
 using Negocio.Utilidad;
 using Negocio.Validador;
-using System.Security.Cryptography;
-using System.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Negocio.Gestion
 {
 
     public class OrdenLogica : IOrden
     {
+        #region Atributos
         private readonly ContextoDb db;
         private readonly COrdenValidator validatorC;
         private readonly UOrdenValidator validatorU;
         private readonly IFacturacionService _facturacion;
+        #endregion
 
+        #region Constructor
         public OrdenLogica(ContextoDb _db, IFacturacionService facturacion)
         {
             db = _db;
@@ -29,6 +29,9 @@ namespace Negocio.Gestion
             validatorU = new UOrdenValidator();
             _facturacion = facturacion ?? throw new ArgumentNullException(nameof(facturacion));
         }
+        #endregion
+
+        #region Métodos
 
         public async Task<RespuestaDto<TReturn>> GuardarAsync<TParam, TReturn>(TParam param)
         {
@@ -53,12 +56,12 @@ namespace Negocio.Gestion
                     OrdenId = ordenId,
                     CantidadItem = dto.CantidadItem,
                     Total = dto.Total,
-                    UsuarioId = dto.UsuarioId?.Trim(),
+                    UsuarioId = dto.UsuarioId!.Trim(),
                     EstadoId = Constantes.Pendiente,
                     Mesa = dto.Mesa,
                     Codigo = dto.Codigo,
                     Vigente = true,
-                    FechaRegistro = DateTime.UtcNow,
+                    FechaRegistro = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified),
                     Domicilio = dto.Domicilio,
                     Cliente = dto.Cliente,
                     Direccion = dto.Direccion
@@ -67,7 +70,7 @@ namespace Negocio.Gestion
                 await db.AddAsync(model);
 
                 var items = new List<TaItemModel>();
-                var pizzas = new List<TaPizzaModel>();
+                var pizzas = new List<TaCaracteristicaModel>();
 
                 foreach (var p in dto.Productos)
                 {
@@ -79,8 +82,12 @@ namespace Negocio.Gestion
                         OrdenId = ordenId,
                         ProductoId = p.ProductoId,
                         Cantidad = p.Cantidad,
-                        Subtotal = p.Subtotal
+                        Subtotal = p.Subtotal,
+                        NombrePlato = string.IsNullOrWhiteSpace(p.NombrePlato)
+                                        ? null
+                                        : p.NombrePlato.Trim().ToUpperInvariant()
                     };
+
 
                     items.Add(item);
 
@@ -88,12 +95,13 @@ namespace Negocio.Gestion
                     {
                         foreach (var c in p.Caracteristicas)
                         {
-                            pizzas.Add(new TaPizzaModel
+                            pizzas.Add(new TaCaracteristicaModel
                             {
-                                PizzaId = Guid.NewGuid().ToString(),
+                                CaracteristicaId = Guid.NewGuid().ToString(),
                                 ItemId = newItemId,
-                                TipoId = c.TipoId,
-                                SaborId = c.SaborId
+                                UnSabor = c.UnSabor,
+                                EnPatacon = c.EnPatacon,
+                                Observacion = c.Observacion
                             });
                         }
                     }
@@ -135,9 +143,6 @@ namespace Negocio.Gestion
             var model = await db.Set<TaOrdenModel>().FindAsync(dto.OrdenId);
             if (model is null)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "La orden no existe.");
-
-            if (model.FechaRegistro.Kind != DateTimeKind.Utc)
-                model.FechaRegistro = model.FechaRegistro.ToUniversalTime();
 
             model.CantidadItem = dto.CantidadItem ?? model.CantidadItem;
             model.Total = dto.Total ?? model.Total;
@@ -230,15 +235,14 @@ namespace Negocio.Gestion
                             CategoriaIdStr = i.TaProductoModel.TaDominioModel.Descripcion,
                             Cantidad = i.Cantidad,
                             Subtotal = i.Subtotal,
-                            Caracteristicas = i.LtsTaPizzaModel
-                                .Select(pz => new RPizzaDto
+                            NombrePlato = i.NombrePlato,
+                            Caracteristicas = i.LtsTaCaracteristicaModel
+                                .Select(pz => new RCaracteristicaDto
                                 {
-                                    PizzaId = pz.PizzaId,
-                                    ItemId = pz.ItemId,
-                                    TipoId = pz.TipoId,
-                                    TipoIdStr = pz.TaDominioModelTipo.Descripcion,
-                                    SaborId = pz.SaborId,
-                                    SaborIdStr = pz.TaDominioModelSabor.Descripcion
+                                    CaracteristicaId = pz.CaracteristicaId,
+                                    UnSabor = pz.UnSabor,
+                                    EnPatacon = pz.EnPatacon,
+                                    Observacion = pz.Observacion
                                 })
                                 .ToList()
                         })
@@ -291,15 +295,14 @@ namespace Negocio.Gestion
                             CategoriaIdStr = i.TaProductoModel.TaDominioModel.Descripcion,
                             Cantidad = i.Cantidad,
                             Subtotal = i.Subtotal,
-                            Caracteristicas = i.LtsTaPizzaModel
-                                .Select(pz => new RPizzaDto
+                            NombrePlato = i.NombrePlato,
+                            Caracteristicas = i.LtsTaCaracteristicaModel
+                                .Select(pz => new RCaracteristicaDto
                                 {
-                                    PizzaId = pz.PizzaId,
-                                    ItemId = pz.ItemId,
-                                    TipoId = pz.TipoId,
-                                    TipoIdStr = pz.TaDominioModelTipo.Descripcion,
-                                    SaborId = pz.SaborId,
-                                    SaborIdStr = pz.TaDominioModelSabor.Descripcion
+                                    CaracteristicaId = pz.CaracteristicaId,
+                                    UnSabor = pz.UnSabor,
+                                    EnPatacon = pz.EnPatacon,
+                                    Observacion = pz.Observacion
                                 })
                                 .ToList()
                         })
@@ -314,7 +317,7 @@ namespace Negocio.Gestion
 
         public async Task<RespuestaDto<TReturn>> ConsultarListaOrdenesDelDiaAsync<TReturn>()
         {
-            var ahora = DateTime.UtcNow;
+            var ahora = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
             var inicio = ahora.Date;
             var fin = inicio.AddDays(1).AddHours(2);
 
@@ -352,15 +355,14 @@ namespace Negocio.Gestion
                             CategoriaIdStr = i.TaProductoModel.TaDominioModel.Descripcion,
                             Cantidad = i.Cantidad,
                             Subtotal = i.Subtotal,
-                            Caracteristicas = i.LtsTaPizzaModel
-                                .Select(pz => new RPizzaDto
+                            NombrePlato = i.NombrePlato,
+                            Caracteristicas = i.LtsTaCaracteristicaModel
+                                .Select(pz => new RCaracteristicaDto
                                 {
-                                    PizzaId = pz.PizzaId,
-                                    ItemId = pz.ItemId,
-                                    TipoId = pz.TipoId,
-                                    TipoIdStr = pz.TaDominioModelTipo.Descripcion,
-                                    SaborId = pz.SaborId,
-                                    SaborIdStr = pz.TaDominioModelSabor.Descripcion
+                                    CaracteristicaId = pz.CaracteristicaId,
+                                    UnSabor = pz.UnSabor,
+                                    EnPatacon = pz.EnPatacon,
+                                    Observacion = pz.Observacion
                                 })
                                 .ToList()
                         })
@@ -384,9 +386,13 @@ namespace Negocio.Gestion
             var dto = _param as PFiltroOrdenesDto;
             var query = db.TaOrdenModel.AsQueryable().AsNoTracking();
 
-            DateTime fechaInicio = DateTime.SpecifyKind(dto.FechaInicio.Date, DateTimeKind.Utc);
-            DateTime fechaFin = new DateTime(dto.FechaFin.Year, dto.FechaFin.Month, dto.FechaFin.Day, 23, 59, 59, DateTimeKind.Utc);
-            query = query.Where(i => i.FechaRegistro >= fechaInicio && i.FechaRegistro <= fechaFin);
+            static DateTime Unspec(DateTime dt) =>
+                DateTime.SpecifyKind(dt, DateTimeKind.Unspecified);
+
+            var fechaInicio = Unspec(dto.FechaInicio.Date);
+            var fechaFinExclusiva = Unspec(dto.FechaFin.Date.AddDays(1));
+
+            query = query.Where(o => o.FechaRegistro >= fechaInicio && o.FechaRegistro < fechaFinExclusiva);
 
             var resultados = await query
                 .Where(x => x.EstadoId == Constantes.Facturada)
@@ -420,15 +426,14 @@ namespace Negocio.Gestion
                             CategoriaIdStr = i.TaProductoModel.TaDominioModel.Descripcion,
                             Cantidad = i.Cantidad,
                             Subtotal = i.Subtotal,
-                            Caracteristicas = i.LtsTaPizzaModel
-                                .Select(pz => new RPizzaDto
+                            NombrePlato = i.NombrePlato,
+                            Caracteristicas = i.LtsTaCaracteristicaModel
+                                .Select(pz => new RCaracteristicaDto
                                 {
-                                    PizzaId = pz.PizzaId,
-                                    ItemId = pz.ItemId,
-                                    TipoId = pz.TipoId,
-                                    TipoIdStr = pz.TaDominioModelTipo.Descripcion,
-                                    SaborId = pz.SaborId,
-                                    SaborIdStr = pz.TaDominioModelSabor.Descripcion
+                                    CaracteristicaId = pz.CaracteristicaId,
+                                    UnSabor = pz.UnSabor,
+                                    EnPatacon = pz.EnPatacon,
+                                    Observacion = pz.Observacion
                                 })
                                 .ToList()
                         })
@@ -441,6 +446,6 @@ namespace Negocio.Gestion
 
             return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación exitosa", (TReturn)(object)resultados);
         }
-
+        #endregion
     }
 }

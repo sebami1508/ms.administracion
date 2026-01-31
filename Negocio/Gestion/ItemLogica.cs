@@ -31,16 +31,37 @@ namespace Negocio.Gestion
             if (!v.IsValid)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, v.ToString());
 
+            var newItemId = Guid.NewGuid().ToString();
+
             var model = new TaItemModel
             {
-                ItemId = Guid.NewGuid().ToString(),
-                OrdenId = dto!.OrdenId!.Trim(),
-                ProductoId = dto!.ProductoId!.Trim(),
-                Cantidad = dto!.Cantidad,
-                Subtotal = dto!.Subtotal
+                ItemId = newItemId,
+                OrdenId = dto.OrdenId!.Trim(),
+                ProductoId = dto.ProductoId.Trim(),
+                Cantidad = dto.Cantidad,
+                Subtotal = dto.Subtotal,
+                NombrePlato = string.IsNullOrWhiteSpace(dto.NombrePlato)
+                                        ? null
+                                        : dto.NombrePlato.Trim().ToUpperInvariant()
             };
 
             db.Add(model);
+
+            if (dto.Caracteristicas != null && dto.Caracteristicas.Any())
+            {
+                var pizzas = dto.Caracteristicas
+                    .Select(c => new TaCaracteristicaModel
+                    {
+                        CaracteristicaId = Guid.NewGuid().ToString(),
+                        ItemId = newItemId,
+                        UnSabor = c.UnSabor,
+                        EnPatacon = c.EnPatacon,
+                        Observacion = c.Observacion
+                    });
+
+                await db.AddRangeAsync(pizzas);
+            }
+
             bool ok = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto);
 
             if (ok) return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");

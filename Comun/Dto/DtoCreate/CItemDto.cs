@@ -8,9 +8,9 @@ namespace Comun.Dto.DtoParameter
         public string ProductoId { get; set; } = null!;
         public int Cantidad { get; set; }
         public decimal Subtotal { get; set; }
-        public string? TipoPizzaId { get; set; }
-        public string? SaborPizzaId { get; set; }
+        public string? NombrePlato { get; set; }
 
-        public List<CPizzaDto>? Caracteristicas { get; set; } = new List<CPizzaDto>();
+        public List<CCaracteristicasDto>? Caracteristicas { get; set; } = new List<CCaracteristicasDto>();
+        
     }
 }

@@ -30,6 +30,10 @@ namespace Datos.Orm.Configuracion
             entity.Property(e => e.Subtotal)
                 .HasColumnName("SUBTOTAL");
 
+            entity.Property(e => e.NombrePlato)
+                .HasColumnName("NOMBRE_PLATO")
+                .HasMaxLength(150);
+
             entity.HasOne(d => d.TaOrdenModel)
                 .WithMany(p => p.LtsTaItemModel)
                 .HasForeignKey(d => d.OrdenId)

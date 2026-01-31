@@ -12,6 +12,9 @@ namespace Comun.Dto.DtoReader
         public string ProductoDescripcion { get; set; }
         public string? CategoriaId { get; set; }
         public string? CategoriaIdStr { get; set; }
-        public List<RPizzaDto>? Caracteristicas { get; set; } = new List<RPizzaDto>();
+        public string? NombrePlato { get; set; }
+
+        public List<RCaracteristicaDto>? Caracteristicas { get; set; } = new List<RCaracteristicaDto>();
+       
     }
 }
