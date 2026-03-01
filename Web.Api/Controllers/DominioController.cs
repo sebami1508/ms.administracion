@@ -50,13 +50,6 @@ namespace WebApi.Controllers
             return Ok(await dominio.EliminarAsync<string, bool>(_param));
         }
 
-        [HttpPut]
-        [Route("[Action]")]
-        public async Task<IActionResult> ActualizarVigencia(UDominioDto? _param)
-        {
-            return Ok(await dominio.ActualizarVigenciaAsync<UDominioDto, bool>(_param));
-        }
-
         [HttpGet]
         [Route("[Action]")]
         public async Task<IActionResult> ConsultarLista()

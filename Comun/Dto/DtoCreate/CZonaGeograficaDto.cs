@@ -2,7 +2,7 @@ using Comun.Dto.DtoUtilidades;
 
 namespace Comun.Dto.DtoCreate
 {
-    public class CZonaGeograficaDto : GestionAuditoriaDto
+    public class CZonaGeograficaDto
     {
         public string? Descripcion { get; set; }
         public decimal? CodigoDane { get; set; }

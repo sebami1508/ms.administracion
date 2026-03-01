@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Comun.Dto.DtoUtilidades
+﻿namespace Comun.Dto.DtoUtilidades
 {
-    public class EliminarDto : GestionAuditoriaDto
+    public class EliminarDto
     {
         public string Id { get; set; }
     }

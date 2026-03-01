@@ -11,7 +11,6 @@ namespace Datos.Orm.Contexto
             this.ChangeTracker.LazyLoadingEnabled = false;
         }
 
-        public DbSet<TaAuditoriaModel> TaAuditoria { get; set; }
         public DbSet<TaUsuarioModel> TaUsuarioModel { get; set; }
         public DbSet<TaRolModel> TaRolModel { get; set; }
         public DbSet<TaRolUsuarioModel> TaRolUsuarioModel { get; set; }
@@ -24,12 +23,12 @@ namespace Datos.Orm.Contexto
         public DbSet<TaItemModel> TaItemModel { get; set; }
         public DbSet<TaCaracteristicaModel> TaPizzaModel { get; set; }
         public DbSet<TaConsecutivoFacturaModel> TaConsecutivoFacturaModel { get; set; }
+        public DbSet<TaTurnoModel> TaTurnoModel { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.ApplyConfiguration(new TaAuditoriaModelEtc());
             modelBuilder.ApplyConfiguration(new TaUsuarioModelEtc());
             modelBuilder.ApplyConfiguration(new TaRolModelEtc());
             modelBuilder.ApplyConfiguration(new TaRolUsuarioModelEtc());
@@ -43,14 +42,11 @@ namespace Datos.Orm.Contexto
             modelBuilder.ApplyConfiguration(new TaItemModelEtc());
             modelBuilder.ApplyConfiguration(new TaCaracteristicaModelEtc());
             modelBuilder.ApplyConfiguration(new TaConsecutivoFacturaModelEtc());
+            modelBuilder.ApplyConfiguration(new TaTurnoModelEtc());
 
             modelBuilder.Entity<TaOrdenModel>()
             .Property(x => x.FechaRegistro)
             .HasColumnType("timestamp without time zone");
-
-            modelBuilder.Entity<TaAuditoriaModel>()
-                .Property(x => x.Fecha)
-                .HasColumnType("timestamp without time zone");
 
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {

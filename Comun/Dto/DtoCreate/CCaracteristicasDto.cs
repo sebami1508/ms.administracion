@@ -2,7 +2,7 @@ using Comun.Dto.DtoUtilidades;
 
 namespace Comun.Dto.DtoParameter
 {
-    public class CCaracteristicasDto : GestionAuditoriaDto
+    public class CCaracteristicasDto
     {
         public bool? UnSabor { get; set; }
         public bool? EnPatacon { get; set; }

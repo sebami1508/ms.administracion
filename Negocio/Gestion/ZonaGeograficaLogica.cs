@@ -53,7 +53,7 @@ namespace Negocio.Gestion
             };
 
             await db.TaZonaGeograficaModel.AddAsync(model);
-            bool resultado = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto);
+            bool resultado = await db.SaveChangesAsync() > 0;
 
             if (resultado)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
@@ -80,10 +80,9 @@ namespace Negocio.Gestion
             if (model == null)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "La zona geográfica no existe.");
 
-            GestionAuditoriaLogica auditoria = new GestionAuditoriaLogica(db);
-            auditoria.ActualizarCamposAutomatico(dto, model);
+            new GestionLogica(db).ActualizarCamposAutomatico(dto, model);
 
-            bool resultado = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto);
+            bool resultado = await db.SaveChangesAsync() > 0;
 
             if (resultado)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
@@ -101,7 +100,7 @@ namespace Negocio.Gestion
                 return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "La zona geográfica no existe.");
 
             db.Entry(model).State = EntityState.Deleted;
-            bool resultado = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto, true);
+            bool resultado = await db.SaveChangesAsync() > 0;
 
             if (resultado)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");

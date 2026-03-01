@@ -2,7 +2,7 @@ using Comun.Dto.DtoUtilidades;
 
 namespace Comun.Dto.DtoUpdate
 {
-    public class UZonaGeograficaDto : GestionAuditoriaDto
+    public class UZonaGeograficaDto
     {
         public string? ZonaGeograficaId { get; set; }
         public string? Descripcion { get; set; }

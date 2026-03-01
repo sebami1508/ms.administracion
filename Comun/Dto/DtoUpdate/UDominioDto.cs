@@ -2,7 +2,7 @@
 
 namespace Comun.Dto.DtoParameter
 {
-    public class UDominioDto : GestionAuditoriaDto
+    public class UDominioDto
     {
         public string? DominioId { get; set; } 
         public string? Descripcion { get; set; }

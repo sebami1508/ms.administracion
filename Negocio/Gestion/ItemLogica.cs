@@ -62,7 +62,7 @@ namespace Negocio.Gestion
                 await db.AddRangeAsync(pizzas);
             }
 
-            bool ok = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto);
+            bool ok = await db.SaveChangesAsync() > 0;
 
             if (ok) return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
             return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
@@ -83,7 +83,7 @@ namespace Negocio.Gestion
             if (dto.Subtotal.HasValue) model.Subtotal = dto.Subtotal.Value;
 
             db.Update(model);
-            bool ok = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto);
+            bool ok = await db.SaveChangesAsync() > 0;
 
             if (ok) return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
             return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");

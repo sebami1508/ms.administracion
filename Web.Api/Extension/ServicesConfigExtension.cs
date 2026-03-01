@@ -23,12 +23,6 @@ namespace Web.Api.Extension
                   )
               );
 
-            _builder.Services.AddDbContext<DbContextError>(options =>
-                  options.UseNpgsql(
-                      _builder.Configuration.GetConnectionString("DbConexion")
-                  )
-              );
-
             _builder.Services.AddScoped<IUsuario, UsuarioLogica>();
             _builder.Services.AddScoped<IRolUsuario, RolUsuarioLogica>();
             _builder.Services.AddScoped<IRol, RolLogica>();
@@ -40,6 +34,7 @@ namespace Web.Api.Extension
             _builder.Services.AddScoped<IOrden, OrdenLogica>();
             _builder.Services.AddScoped<IItem, ItemLogica>();
             _builder.Services.AddScoped<IFacturacionService, FacturacionService>();
+            _builder.Services.AddScoped<ITurno, TurnoLogica>();
         }
     }
 }

@@ -55,8 +55,8 @@ namespace Negocio.Gestion
                 {
                     OrdenId = ordenId,
                     CantidadItem = dto.CantidadItem,
-                    Total = dto.Total,
                     UsuarioId = dto.UsuarioId!.Trim(),
+                    Total = dto.Total,
                     EstadoId = Constantes.Pendiente,
                     Mesa = dto.Mesa,
                     Codigo = dto.Codigo,
@@ -64,7 +64,8 @@ namespace Negocio.Gestion
                     FechaRegistro = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified),
                     Domicilio = dto.Domicilio,
                     Cliente = dto.Cliente,
-                    Direccion = dto.Direccion
+                    Direccion = dto.Direccion,
+                    TurnoId = dto.TurnoId
                 };
 
                 await db.AddAsync(model);
@@ -112,8 +113,7 @@ namespace Negocio.Gestion
                 if (pizzas.Count > 0)
                     await db.AddRangeAsync(pizzas);
 
-                var auditoria = new GestionAuditoriaLogica(db);
-                bool guardado = await auditoria.SaveChangesAsync(dto.ParametrosAuditoriaDto);
+                bool guardado = await db.SaveChangesAsync() > 0;
 
                 if (!guardado)
                 {
@@ -146,6 +146,8 @@ namespace Negocio.Gestion
 
             model.CantidadItem = dto.CantidadItem ?? model.CantidadItem;
             model.Total = dto.Total ?? model.Total;
+            model.TotalEfectivo = dto.TotalEfectivo ?? model.TotalEfectivo;
+            model.TotalTransferencia = dto.TotalTransferencia ?? model.TotalTransferencia;
 
             if (!string.IsNullOrWhiteSpace(dto.EstadoId))
                 model.EstadoId = dto.EstadoId.Trim();
@@ -163,10 +165,9 @@ namespace Negocio.Gestion
                 }
             }
 
-            var auditoria = new GestionAuditoriaLogica(db);
-            auditoria.ActualizarCamposAutomatico(dto, model);
+            new GestionLogica(db).ActualizarCamposAutomatico(dto, model);
 
-            var ok = await auditoria.SaveChangesAsync(dto.ParametrosAuditoriaDto);
+            var ok = await db.SaveChangesAsync() > 0;
 
             if (!ok)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
@@ -211,6 +212,8 @@ namespace Negocio.Gestion
                     OrdenId = o.OrdenId,
                     CantidadItem = o.CantidadItem,
                     Total = o.Total,
+                    TotalEfectivo = o.TotalEfectivo,
+                    TotalTransferencia = o.TotalTransferencia,
                     UsuarioId = o.UsuarioId,
                     UsuarioIdStr = $"{o.TaUsuarioModel.Nombres} {o.TaUsuarioModel.Apellidos}",
                     EstadoId = o.EstadoId,
@@ -271,6 +274,8 @@ namespace Negocio.Gestion
                     OrdenId = o.OrdenId,
                     CantidadItem = o.CantidadItem,
                     Total = o.Total,
+                    TotalEfectivo = o.TotalEfectivo,
+                    TotalTransferencia = o.TotalTransferencia,
                     UsuarioId = o.UsuarioId,
                     UsuarioIdStr = $"{o.TaUsuarioModel.Nombres} {o.TaUsuarioModel.Apellidos}",
                     EstadoId = o.EstadoId,
@@ -331,6 +336,8 @@ namespace Negocio.Gestion
                     OrdenId = o.OrdenId,
                     CantidadItem = o.CantidadItem,
                     Total = o.Total,
+                    TotalEfectivo = o.TotalEfectivo,
+                    TotalTransferencia = o.TotalTransferencia,
                     UsuarioId = o.UsuarioId,
                     UsuarioIdStr = $"{o.TaUsuarioModel.Nombres} {o.TaUsuarioModel.Apellidos}",
                     EstadoId = o.EstadoId,
@@ -381,6 +388,73 @@ namespace Negocio.Gestion
         }
 
 
+        public async Task<RespuestaDto<TReturn>> ConsultarListaOrdenesPorTurnoIdAsync<TParam, TReturn>(TParam _param)
+        {
+            string turnoId = _param as string;
+
+            if (string.IsNullOrWhiteSpace(turnoId))
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "El identificador es necesario.");
+
+            var resultados = await db.Set<TaOrdenModel>()
+                .AsNoTracking()
+                .Where(o => o.TurnoId == turnoId)
+                .OrderByDescending(o => o.FechaRegistro)
+                .Select(o => new ROrdenDto
+                {
+                    OrdenId = o.OrdenId,
+                    CantidadItem = o.CantidadItem,
+                    Total = o.Total,
+                    TotalEfectivo = o.TotalEfectivo,
+                    TotalTransferencia = o.TotalTransferencia,
+                    UsuarioId = o.UsuarioId,
+                    UsuarioIdStr = $"{o.TaUsuarioModel.Nombres} {o.TaUsuarioModel.Apellidos}",
+                    EstadoId = o.EstadoId,
+                    EstadoIdStr = o.TaDominioModel.Descripcion,
+                    Codigo = o.Codigo,
+                    FechaRegistro = o.FechaRegistro,
+                    Mesa = o.Mesa,
+                    Domicilio = o.Domicilio,
+                    Cliente = o.Cliente,
+                    Direccion = o.Direccion,
+                    MetodoPagoId = o.MetodoPagoId,
+                    MetodoPagoIdStr = o.TaDominioModel2.Descripcion,
+                    NumeroFactura = o.NumeroFactura,
+                    Productos = o.LtsTaItemModel.OrderBy(i => i.TaProductoModel.TaDominioModel.Descripcion)
+                        .Select(i => new RItemDto
+                        {
+                            ItemId = i.ItemId,
+                            OrdenId = i.OrdenId,
+                            ProductoId = i.ProductoId,
+                            ProductoDescripcion = i.TaProductoModel.Descripcion,
+                            CategoriaId = i.TaProductoModel.CategoriaId,
+                            CategoriaIdStr = i.TaProductoModel.TaDominioModel.Descripcion,
+                            Cantidad = i.Cantidad,
+                            Subtotal = i.Subtotal,
+                            NombrePlato = i.NombrePlato,
+                            Caracteristicas = i.LtsTaCaracteristicaModel
+                                .Select(pz => new RCaracteristicaDto
+                                {
+                                    CaracteristicaId = pz.CaracteristicaId,
+                                    UnSabor = pz.UnSabor,
+                                    EnPatacon = pz.EnPatacon,
+                                    Observacion = pz.Observacion
+                                })
+                                .ToList()
+                        })
+                        .ToList()
+                })
+                .ToListAsync();
+
+            if (!resultados.Any())
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se encontraron órdenes.");
+
+            return new RespuestaDto<TReturn>(
+                EstadoOperacion.Bueno,
+                "Operación exitosa",
+                (TReturn)(object)resultados
+            );
+        }
+
         public async Task<RespuestaDto<TReturn>> ConsultarListaOrdenesRangoDeFechasAsync<TParam, TReturn>(TParam _param)
         {
             var dto = _param as PFiltroOrdenesDto;
@@ -402,6 +476,8 @@ namespace Negocio.Gestion
                     OrdenId = o.OrdenId,
                     CantidadItem = o.CantidadItem,
                     Total = o.Total,
+                    TotalEfectivo = o.TotalEfectivo,
+                    TotalTransferencia = o.TotalTransferencia,
                     UsuarioId = o.UsuarioId,
                     UsuarioIdStr = $"{o.TaUsuarioModel.Nombres} {o.TaUsuarioModel.Apellidos}",
                     EstadoId = o.EstadoId,

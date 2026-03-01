@@ -2,7 +2,7 @@ using Comun.Dto.DtoUtilidades;
 
 namespace Comun.Dto.DtoParameter
 {
-    public class CItemDto : GestionAuditoriaDto
+    public class CItemDto
     {
         public string? OrdenId { get; set; }
         public string ProductoId { get; set; } = null!;

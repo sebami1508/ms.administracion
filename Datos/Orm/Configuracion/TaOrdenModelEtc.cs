@@ -62,20 +62,35 @@ namespace Datos.Orm.Configuracion
             .HasColumnName("NUM_FACTURA")
             .HasMaxLength(10);
 
+            entity.Property(e => e.TotalTransferencia)
+              .HasColumnName("TOTAL_TRANSFERENCIA");
+
+            entity.Property(e => e.TotalEfectivo)
+                .HasColumnName("TOTAL_EFECTIVO");
+
+            entity.Property(e => e.TurnoId)
+           .HasColumnName("TURNO_ID")
+           .HasMaxLength(40);
+
             entity.HasOne(d => d.TaUsuarioModel)
                 .WithMany(p => p.LtsTaOrdenModel)
                 .HasForeignKey(d => d.UsuarioId)
-                .HasConstraintName("FK_USUARIO_ID_ORDEN");
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(d => d.TaDominioModel)
                 .WithMany(p => p.LtsTaOrdenModel)
                 .HasForeignKey(d => d.EstadoId)
-                .HasConstraintName("FK_ESTADO_ID_ORDEN");
+                .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(d => d.TaDominioModel2)
              .WithMany(p => p.LtsTaOrdenModel2)
              .HasForeignKey(d => d.MetodoPagoId)
-             .HasConstraintName("FK_METODO_PAGO_ORDEN");
+             .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(d => d.TaTurnoModel)
+            .WithMany(p => p.LtsTaOrdenModel)
+            .HasForeignKey(d => d.TurnoId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         }
     }

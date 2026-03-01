@@ -69,5 +69,12 @@ namespace WebApi.Controllers
         {
             return Ok(await orden.ConsultarListaOrdenesRangoDeFechasAsync<PFiltroOrdenesDto, List<ROrdenDto>>(_dto));
         }
+
+        [HttpGet]
+        [Route("[Action]")]
+        public async Task<IActionResult> ConsultarListaOrdenesPorTurnoId(string _param)
+        {
+            return Ok(await orden.ConsultarListaOrdenesPorTurnoIdAsync<string, List<ROrdenDto>>(_param));
+        }
     }
 }

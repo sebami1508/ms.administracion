@@ -94,7 +94,7 @@ namespace Negocio.Gestion
 
             db.Add(nuevoUsuario);
 
-            bool resultado = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto);
+            bool resultado = await db.SaveChangesAsync() > 0;
 
             if (resultado)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
@@ -176,19 +176,17 @@ namespace Negocio.Gestion
                 };
             }
 
-            dto.Nombres = dto.Nombres.Trim().ToUpper();
-            dto.Apellidos = dto.Apellidos.Trim().ToUpper();
-            dto.CorreoElectronico = dto.CorreoElectronico.Trim().ToLower();
+            dto.Nombres = dto.Nombres!.Trim().ToUpperInvariant();
+            dto.Apellidos = dto.Apellidos!.Trim().ToUpperInvariant();
+            dto.CorreoElectronico = dto.CorreoElectronico!.Trim().ToLowerInvariant();
 
-            GestionAuditoriaLogica auditoriaLogica = new GestionAuditoriaLogica(db);
-            auditoriaLogica.ActualizarCamposAutomatico(dto, model);
+            new GestionLogica(db).ActualizarCamposAutomatico(dto, model);
 
-            bool resultado = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto);
+            bool resultado = await db.SaveChangesAsync() > 0;
 
             if (resultado)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
-            else
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
+            return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
         }
 
         public async Task<RespuestaDto<TReturn>> ActualizarVigenciaAsync<TParam, TReturn>(TParam _param)
@@ -209,12 +207,11 @@ namespace Negocio.Gestion
             dato.Vigente = dto.Vigente;
             db.Update(dato);
 
-            bool resultado = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto);
+            bool resultado = await db.SaveChangesAsync() > 0;
 
             if (resultado)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
-            else
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
+            return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
         }
 
         public async Task<RespuestaDto<TReturn>> EliminarAsync<TParam, TReturn>(TParam _param)
@@ -239,12 +236,11 @@ namespace Negocio.Gestion
 
             db.Update(dato);
 
-            bool resultado = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto, true);
+            bool resultado = await db.SaveChangesAsync(true) > 0;
 
             if (resultado)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
-            else
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
+            return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
         }
 
         public async Task<RespuestaDto<TReturn>> ConsultarListaAsync<TReturn>()
@@ -376,8 +372,7 @@ namespace Negocio.Gestion
 
             if (resultado)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
-            else
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
+            return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
 
         }
 
@@ -414,12 +409,11 @@ namespace Negocio.Gestion
             model.IngresoPrimeraVez = false;
             db.Update(model);
 
-            bool resultado = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto);
+            bool resultado = await db.SaveChangesAsync() > 0;
 
             if (resultado)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
-            else
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
+            return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
 
         }
 
@@ -495,7 +489,6 @@ namespace Negocio.Gestion
 
             if (!ok)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se logró registrar la solicitud OTP.");
-
             return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Se envió el código OTP al correo registrado.");
         }
 

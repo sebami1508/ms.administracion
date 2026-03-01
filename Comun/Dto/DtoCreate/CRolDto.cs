@@ -2,7 +2,7 @@
 
 namespace Comun.Dto.DtoParameter
 {
-    public class CRolDto : GestionAuditoriaDto
+    public class CRolDto
     {
         public string? Descripcion { get; set; }
         public bool? Vigente { get; set; }

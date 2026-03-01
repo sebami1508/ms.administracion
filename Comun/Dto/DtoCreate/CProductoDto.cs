@@ -1,11 +1,9 @@
-using Comun.Dto.DtoUtilidades;
-
 namespace Comun.Dto.DtoParameter
 {
-    public class CProductoDto : GestionAuditoriaDto
+    public class CProductoDto
     {
-        public string? CategoriaId { get; set; }
-        public string? Descripcion { get; set; }
-        public decimal? Precio { get; set; }
+        public string CategoriaId { get; set; } = null!;
+        public string Descripcion { get; set; } = null!;
+        public decimal Precio { get; set; }
     }
 }

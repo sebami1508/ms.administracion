@@ -54,7 +54,7 @@ namespace Negocio.Gestion
             };
 
             db.Add(model);
-            bool resultado = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto);
+            bool resultado = await db.SaveChangesAsync() > 0;
             if (resultado)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
             return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
@@ -94,7 +94,7 @@ namespace Negocio.Gestion
             model.RolId = dto.RolId!;
 
             db.Update(model);
-            bool resultado = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto);
+            bool resultado = await db.SaveChangesAsync() > 0;
             if (resultado)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
             return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");

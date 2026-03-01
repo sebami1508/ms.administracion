@@ -14,7 +14,7 @@
         public ICollection<TaProductoModel> LtsTaProductoModel { get; set; } = new List<TaProductoModel>();
         public ICollection<TaOrdenModel> LtsTaOrdenModel { get; set; } = new List<TaOrdenModel>();
         public ICollection<TaOrdenModel> LtsTaOrdenModel2 { get; set; } = new List<TaOrdenModel>();
-
+        public ICollection<TaTurnoModel> LtsTaTurnoModel { get; set; } = null!;
         #endregion
     }
 }

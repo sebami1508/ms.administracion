@@ -2,7 +2,7 @@ using Comun.Dto.DtoUtilidades;
 
 namespace Comun.Dto.DtoParameter
 {
-    public class UProductoDto : GestionAuditoriaDto
+    public class UProductoDto
     {
         public string? ProductoId { get; set; }
         public string? CategoriaId { get; set; }

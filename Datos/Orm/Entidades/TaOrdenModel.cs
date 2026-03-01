@@ -16,10 +16,14 @@
         public string? Cliente { get; set; }
         public string? Direccion { get; set; }
         public string? NumeroFactura { get; set; }
+        public decimal? TotalTransferencia { get; set; }
+        public decimal? TotalEfectivo { get; set; }
+        public string TurnoId { get; set; } = null!;
 
         public TaUsuarioModel TaUsuarioModel { get; set; }
         public TaDominioModel TaDominioModel { get; set; }
         public TaDominioModel TaDominioModel2 { get; set; }
+        public TaTurnoModel TaTurnoModel { get; set; }
         public ICollection<TaItemModel> LtsTaItemModel { get; set; } = new List<TaItemModel>();
     }
 }

@@ -2,7 +2,7 @@
 
 namespace Comun.Dto.DtoParameter
 {
-    public class PRolesUsuarioDto : GestionAuditoriaDto
+    public class PRolesUsuarioDto
     {
         public List<string> Roles { get; set; } = null!;
     }

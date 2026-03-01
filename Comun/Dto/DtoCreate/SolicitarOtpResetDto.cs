@@ -2,7 +2,7 @@
 
 namespace Comun.Dto.DtoParameter
 {
-    public class SolicitarOtpResetDto : GestionAuditoriaDto
+    public class SolicitarOtpResetDto
     {
         public string IdentificacionOCorreo { get; set; } = null!;
         public string? Ip { get; set; }

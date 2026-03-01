@@ -7,6 +7,8 @@ namespace Comun.Dto.DtoReader
         public string? OrdenId { get; set; }
         public int? CantidadItem { get; set; }
         public decimal? Total { get; set; }
+        public decimal? TotalEfectivo { get; set; }
+        public decimal? TotalTransferencia { get; set; }
         public string? UsuarioId { get; set; }
         public string? UsuarioIdStr { get; set; }
         public string? EstadoId { get; set; }

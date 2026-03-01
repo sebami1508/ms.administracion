@@ -3,6 +3,8 @@ using Comun.Dto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Negocio.Contrato;
+using System.Net.Mime;
+using Comun.Dto.DtoUtilidades;
 
 namespace WebApi.Controllers
 {
@@ -36,9 +38,9 @@ namespace WebApi.Controllers
 
         [HttpDelete]
         [Route("[Action]")]
-        public async Task<IActionResult> Eliminar(string _param)
+        public async Task<IActionResult> Eliminar(EliminarDto _param)
         {
-            return Ok(await producto.EliminarAsync<string, bool>(_param));
+            return Ok(await producto.EliminarAsync<EliminarDto, bool>(_param));
         }
 
         [HttpGet]
@@ -46,6 +48,29 @@ namespace WebApi.Controllers
         public async Task<IActionResult> ConsultarLista()
         {
             return Ok(await producto.ConsultarListaAsync<List<RProductoDto>>());
+        }
+
+        [HttpGet]
+        [Route("[Action]")]
+        public async Task<IActionResult> ExportarExcel()
+        {
+            var r = await producto.ExportarExcelAsync<byte[]>();
+            if (!r.Estado)
+                return BadRequest(r);
+
+            return File(
+                fileContents: r.Respuesta,
+                contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                fileDownloadName: "Productos.xlsx");
+        }
+
+        [HttpPost]
+        [Route("[Action]")]
+        [Consumes(MediaTypeNames.Multipart.FormData)]
+        public async Task<IActionResult> ImportarExcel([FromForm] IFormFile archivo)
+        {
+            await using var stream = archivo.OpenReadStream();
+            return Ok(await producto.ImportarExcelAsync<Stream, ProductoExcelImportResultDto>(stream));
         }
     }
 }

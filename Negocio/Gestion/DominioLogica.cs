@@ -76,7 +76,7 @@ namespace Negocio.Gestion
                 Vigente = true,
             }).State = EntityState.Added;
 
-            bool resultado = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto);
+            bool resultado = await db.SaveChangesAsync() > 0;
 
             if (resultado)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
@@ -110,15 +110,12 @@ namespace Negocio.Gestion
                 };
             }
 
-            GestionAuditoriaLogica auditoriaLogica = new GestionAuditoriaLogica(db);
-            auditoriaLogica.ActualizarCamposAutomatico(dto, model);
-
-            bool resultado = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto);
+            new GestionLogica(db).ActualizarCamposAutomatico(dto, model);
+            bool resultado = await db.SaveChangesAsync() > 0;
 
             if (resultado)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
-            else
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
+            return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
         }
 
         public async Task<RespuestaDto<TReturn>> EliminarAsync<TParam, TReturn>(TParam _param)
@@ -142,39 +139,13 @@ namespace Negocio.Gestion
             dato.Vigente = (dato.Vigente == Constantes.Vigente) ? Constantes.NoVigente : Constantes.Vigente;
             db.Update(dato);
 
-            bool resultado = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto, true);
+            bool resultado = await db.SaveChangesAsync() > 0;
 
             if (resultado)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
-            else
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
+            return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
         }
 
-        public async Task<RespuestaDto<TReturn>> ActualizarVigenciaAsync<TParam, TReturn>(TParam _param)
-        {
-            var dto = _param as UDominioDto;
-
-            var dato = await db.TaDominioModel.FindAsync(dto.DominioId);
-
-            if (dato == null)
-            {
-                return new RespuestaDto<TReturn>
-                {
-                    Codigo = EstadoOperacion.Validacion,
-                    Mensaje = "La no existe.",
-                };
-            }
-
-            dato.Vigente = dto.Vigente;
-            db.Update(dato);
-
-            bool resultado = await new GestionAuditoriaLogica(db).SaveChangesAsync(dto.ParametrosAuditoriaDto);
-
-            if (resultado)
-                return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
-            else
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
-        }
 
         public async Task<RespuestaDto<TReturn>> ConsultarListaAsync<TReturn>()
         {

@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="Validador\TurnoValidator.cs" />
     <Compile Include="Validador\DominioValidator.cs" />
     <Compile Include="Validador\ItemValidator.cs" />
     <Compile Include="Validador\OrdenValidator.cs" />
@@ -27,6 +28,7 @@
   <ItemGroup>
     <PackageReference Include="FluentValidation" Version="12.1.0" />
     <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
+    <PackageReference Include="ClosedXML" Version="0.104.2" />
   </ItemGroup>
 
   <ItemGroup>
