@@ -70,8 +70,8 @@ namespace Negocio.Gestion
             if (model == null)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "El producto no existe.");
 
-            model.CategoriaId = string.IsNullOrWhiteSpace(dto.CategoriaId) ? model.CategoriaId : dto.CategoriaId.Trim();
-            model.Descripcion = string.IsNullOrWhiteSpace(dto.Descripcion) ? model.Descripcion : dto.Descripcion.Trim();
+            model.CategoriaId = string.IsNullOrWhiteSpace(dto.CategoriaId) ? model.CategoriaId : dto.CategoriaId;
+            model.Descripcion = string.IsNullOrWhiteSpace(dto.Descripcion) ? model.Descripcion : dto.Descripcion.Trim().ToUpperInvariant();
             if (dto.Precio.HasValue) model.Precio = dto.Precio.Value;
 
             db.Update(model);
