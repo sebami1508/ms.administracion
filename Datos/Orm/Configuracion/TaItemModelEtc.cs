@@ -34,6 +34,10 @@ namespace Datos.Orm.Configuracion
                 .HasColumnName("NOMBRE_PLATO")
                 .HasMaxLength(150);
 
+            entity.Property(e => e.Observacion)
+               .HasColumnName("OBSERVACION")
+               .HasMaxLength(300);
+
             entity.HasOne(d => d.TaOrdenModel)
                 .WithMany(p => p.LtsTaItemModel)
                 .HasForeignKey(d => d.OrdenId)

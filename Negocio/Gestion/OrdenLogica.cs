@@ -33,6 +33,9 @@ namespace Negocio.Gestion
 
         #region Métodos
 
+        static string? Clean(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+        static string? Upper(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim().ToUpperInvariant();
+
         public async Task<RespuestaDto<TReturn>> GuardarAsync<TParam, TReturn>(TParam param)
         {
             if (param is not COrdenDto dto)
@@ -84,9 +87,8 @@ namespace Negocio.Gestion
                         ProductoId = p.ProductoId,
                         Cantidad = p.Cantidad,
                         Subtotal = p.Subtotal,
-                        NombrePlato = string.IsNullOrWhiteSpace(p.NombrePlato)
-                                        ? null
-                                        : p.NombrePlato.Trim().ToUpperInvariant()
+                        NombrePlato = Upper(p.NombrePlato),
+                        Observacion = Clean(p.Observacion)
                     };
 
 
@@ -239,6 +241,7 @@ namespace Negocio.Gestion
                             Cantidad = i.Cantidad,
                             Subtotal = i.Subtotal,
                             NombrePlato = i.NombrePlato,
+                            Observacion = i.Observacion,
                             Caracteristicas = i.LtsTaCaracteristicaModel
                                 .Select(pz => new RCaracteristicaDto
                                 {
@@ -301,6 +304,7 @@ namespace Negocio.Gestion
                             Cantidad = i.Cantidad,
                             Subtotal = i.Subtotal,
                             NombrePlato = i.NombrePlato,
+                            Observacion = i.Observacion,
                             Caracteristicas = i.LtsTaCaracteristicaModel
                                 .Select(pz => new RCaracteristicaDto
                                 {
@@ -363,6 +367,7 @@ namespace Negocio.Gestion
                             Cantidad = i.Cantidad,
                             Subtotal = i.Subtotal,
                             NombrePlato = i.NombrePlato,
+                            Observacion = i.Observacion,
                             Caracteristicas = i.LtsTaCaracteristicaModel
                                 .Select(pz => new RCaracteristicaDto
                                 {
@@ -431,6 +436,7 @@ namespace Negocio.Gestion
                             Cantidad = i.Cantidad,
                             Subtotal = i.Subtotal,
                             NombrePlato = i.NombrePlato,
+                            Observacion = i.Observacion,
                             Caracteristicas = i.LtsTaCaracteristicaModel
                                 .Select(pz => new RCaracteristicaDto
                                 {
@@ -503,6 +509,7 @@ namespace Negocio.Gestion
                             Cantidad = i.Cantidad,
                             Subtotal = i.Subtotal,
                             NombrePlato = i.NombrePlato,
+                            Observacion = i.Observacion,
                             Caracteristicas = i.LtsTaCaracteristicaModel
                                 .Select(pz => new RCaracteristicaDto
                                 {

@@ -25,6 +25,9 @@ namespace Negocio.Gestion
             validatorU = new UItemValidator();
         }
 
+        static string? Clean(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+        static string? Upper(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim().ToUpperInvariant();
+
         public async Task<RespuestaDto<TReturn>> GuardarAsync<TParam, TReturn>(TParam _param)
         {
             var dto = _param as CItemDto;
@@ -41,9 +44,8 @@ namespace Negocio.Gestion
                 ProductoId = dto.ProductoId.Trim(),
                 Cantidad = dto.Cantidad,
                 Subtotal = dto.Subtotal,
-                NombrePlato = string.IsNullOrWhiteSpace(dto.NombrePlato)
-                                        ? null
-                                        : dto.NombrePlato.Trim().ToUpperInvariant()
+                NombrePlato = Upper(dto.NombrePlato),
+                Observacion = Clean(dto.Observacion)
             };
 
             db.Add(model);
@@ -57,7 +59,7 @@ namespace Negocio.Gestion
                         ItemId = newItemId,
                         UnSabor = c.UnSabor,
                         EnPatacon = c.EnPatacon,
-                        Observacion = c.Observacion
+                        Observacion = Clean(c.Observacion)
                     });
 
                 await db.AddRangeAsync(pizzas);
@@ -77,11 +79,13 @@ namespace Negocio.Gestion
                 return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, v.ToString());
 
             var model = await db.Set<TaItemModel>().FindAsync(dto!.ItemId);
+
             if (model == null)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "El item no existe.");
 
             if (dto.Cantidad.HasValue) model.Cantidad = dto.Cantidad.Value;
             if (dto.Subtotal.HasValue) model.Subtotal = dto.Subtotal.Value;
+            if (string.IsNullOrWhiteSpace(dto.Observacion)) model.Observacion = dto.Observacion;
 
             db.Update(model);
             bool ok = await db.SaveChangesAsync() > 0;

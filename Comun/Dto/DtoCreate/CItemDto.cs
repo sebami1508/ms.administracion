@@ -9,6 +9,7 @@ namespace Comun.Dto.DtoParameter
         public int Cantidad { get; set; }
         public decimal Subtotal { get; set; }
         public string? NombrePlato { get; set; }
+        public string? Observacion { get; set; }
 
         public List<CCaracteristicasDto>? Caracteristicas { get; set; } = new List<CCaracteristicasDto>();
         
