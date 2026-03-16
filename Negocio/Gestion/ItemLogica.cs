@@ -1,6 +1,7 @@
 using Comun.Dto;
 using Comun.Dto.DtoParameter;
 using Comun.Dto.DtoReader;
+using Comun.Dto.DtoUtilidades;
 using Comun.Enumeracion;
 using Datos.Orm.Contexto;
 using Datos.Orm.Entidades;
@@ -91,19 +92,33 @@ namespace Negocio.Gestion
 
         public async Task<RespuestaDto<TReturn>> EliminarAsync<TParam, TReturn>(TParam _param)
         {
-            var id = _param as string;
-            if (string.IsNullOrWhiteSpace(id))
+            if (_param is not EliminarDto dto || string.IsNullOrWhiteSpace(dto.Id))
                 return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "Identificador inválido.");
 
-            var model = await db.Set<TaItemModel>().FindAsync(id);
-            if (model == null)
+            var item = await db.Set<TaItemModel>().FindAsync(dto.Id);
+
+            if (item is null)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "El item no existe.");
 
-            db.Remove(model);
-            bool ok = await db.SaveChangesAsync() > 0;
+            await db.Set<TaCaracteristicaModel>()
+                .Where(x => x.ItemId == item.ItemId)
+                .ExecuteDeleteAsync();
 
-            if (ok) return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
-            return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
+            var orden = await db.Set<TaOrdenModel>().FindAsync(item.OrdenId);
+
+            if (orden is not null)
+            {
+                orden.Total = Math.Max(0, orden.Total - item.Subtotal);
+                orden.CantidadItem = Math.Max(0, orden.CantidadItem - item.Cantidad);
+            }
+
+            db.Set<TaItemModel>().Remove(item);
+
+            var cambios = await db.SaveChangesAsync();
+
+            return cambios > 0
+                ? new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.")
+                : new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
         }
 
         public async Task<RespuestaDto<TReturn>> ConsultarListaAsync<TReturn>()

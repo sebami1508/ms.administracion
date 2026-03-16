@@ -4,6 +4,7 @@ using Comun.Dto.DtoReader;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Negocio.Contrato;
+using Comun.Dto.DtoUtilidades;
 
 namespace WebApi.Controllers
 {
@@ -37,9 +38,9 @@ namespace WebApi.Controllers
 
         [HttpDelete]
         [Route("[Action]")]
-        public async Task<IActionResult> Eliminar(string _param)
+        public async Task<IActionResult> Eliminar(EliminarDto _param)
         {
-            return Ok(await item.EliminarAsync<string, bool>(_param));
+            return Ok(await item.EliminarAsync<EliminarDto, bool>(_param));
         }
 
         [HttpGet]
