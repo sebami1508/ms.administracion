@@ -11,11 +11,13 @@
         public decimal Base { get; set; }
         public DateTime? FechaInicio { get; set; }
         public DateTime? FechaFin { get; set; }
+        public bool Finalizado { get; set; }
 
 
         public TaUsuarioModel TaUsuarioModel { get; set; } = null!;
         public TaDominioModel TaDominioModel { get; set; } = null!;
         public ICollection<TaOrdenModel> LtsTaOrdenModel { get; set; } = new List<TaOrdenModel>();
+      
 
         #endregion
     }

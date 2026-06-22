@@ -66,7 +66,7 @@ namespace Negocio.Gestion
                     Vigente = true,
                     FechaRegistro = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified),
                     Domicilio = dto.Domicilio,
-                    Cliente = dto.Cliente,
+                    Cliente = dto.Cliente != null ? dto.Cliente?.Trim().ToUpperInvariant() : null,
                     Direccion = dto.Direccion,
                     TurnoId = dto.TurnoId
                 };

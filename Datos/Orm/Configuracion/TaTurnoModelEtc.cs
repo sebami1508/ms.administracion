@@ -36,6 +36,9 @@ namespace Datos.Orm.Configuracion
             builder.Property(s => s.FechaFin)
                  .HasColumnName("FECHA_FIN");
 
+            builder.Property(s => s.Finalizado)
+                 .HasColumnName("FINALIZADO");
+
             builder.HasOne(s => s.TaUsuarioModel)
                     .WithMany(s => s.LtsTaTurnoModel)
                     .HasForeignKey(s => s.UsuarioId)

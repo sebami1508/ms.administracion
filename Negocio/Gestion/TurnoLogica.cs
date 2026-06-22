@@ -1,12 +1,10 @@
 ﻿using Comun.Dto;
 using Comun.Dto.DtoParameter;
-using Comun.Dto.DtoUtilidades;
 using Comun.Enumeracion;
 using Datos.Orm.Contexto;
 using Datos.Orm.Entidades;
 using Microsoft.EntityFrameworkCore;
 using Negocio.Contrato;
-using Negocio.Utilidad;
 using Negocio.Validador;
 using FluentValidation;
 
@@ -54,15 +52,15 @@ namespace Negocio.Gestion
             if (turnoExiste != null)
                 return new RespuestaDto<TReturn>(
                     EstadoOperacion.Malo,
-                    "Ya existe un turno registrado para este día. Si fue finalizado por error, solicite a un administrador del sistema que lo habilite nuevamente."
+                    "Ya existe un turno registrado para este día. Si fue finalizado por error, solicite al administrador del sistema que lo habilite nuevamente."
                 );
 
-            var turnoPendiente = await db.TaTurnoModel.AsNoTracking().Where(x => x.EstadoId == Constantes.PendienteIniciar).FirstOrDefaultAsync();
+            var turnoPendiente = await db.TaTurnoModel.AsNoTracking().Where(x => x.EstadoId == Constantes.PendienteIniciar && x.Finalizado == false).FirstOrDefaultAsync();
 
             if (turnoPendiente != null)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Existe un turno pendiente por iniciar, no se puede crear uno nuevo hasta finalizar el actual.");
 
-            var turnoVigente = await db.TaTurnoModel.AsNoTracking().Where(x => x.EstadoId == Constantes.TurnoVigente).FirstOrDefaultAsync();
+            var turnoVigente = await db.TaTurnoModel.AsNoTracking().Where(x => x.EstadoId == Constantes.TurnoVigente && x.Finalizado == false).FirstOrDefaultAsync();
 
             if (turnoVigente != null)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Existe un turno vigente, no se puede crear uno nuevo hasta finalizar el actual.");
@@ -73,7 +71,8 @@ namespace Negocio.Gestion
                 UsuarioId = dto.UsuarioId,
                 EstadoId = Constantes.PendienteIniciar,
                 FechaTurno = DateTime.SpecifyKind(dto.FechaTurno, DateTimeKind.Unspecified),
-                Base = dto.Base
+                Base = dto.Base,
+                Finalizado = false
             };
 
             db.TaTurnoModel.Add(nuevoTuurno);
@@ -122,6 +121,7 @@ namespace Negocio.Gestion
                     .SetProperty(x => x.Base, x => dto.Base ?? x.Base)
                     .SetProperty(t => t.FechaInicio, t => dto.FechaInicio.HasValue ? fechaInicio : t.FechaInicio)
                     .SetProperty(t => t.FechaFin, t => dto.FechaFin.HasValue ? fechaFin : t.FechaFin)
+                    .SetProperty(t => t.Finalizado, t => dto.EstadoId == Constantes.Finalizado ? true : false)
                 );
 
             if (rows == 0)
@@ -190,9 +190,8 @@ namespace Negocio.Gestion
 
         public async Task<RespuestaDto<TReturn>> ConsultarTurnoVigenteAsync<TReturn>()
         {
-
             var resultados = await db.TaTurnoModel
-               .Where(x => x.EstadoId == Constantes.TurnoVigente)
+               .Where(x => x.EstadoId == Constantes.TurnoVigente && x.Finalizado == false)
                .Select(f => new RTurnoDto
                {
                    TurnoId = f.TurnoId,

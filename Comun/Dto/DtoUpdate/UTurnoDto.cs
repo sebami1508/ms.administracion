@@ -7,7 +7,6 @@
         public decimal? Base { get; set; }
         public DateTime? FechaInicio { get; set; }
         public DateTime? FechaFin { get; set; }
-
-
+        public bool Finalizado { get; set; }
     }
 }
