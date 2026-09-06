@@ -102,6 +102,243 @@ namespace Negocio.Gestion
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
         }
 
+        /// <summary>
+        /// Registro de cliente desde la app móvil: crea el usuario con la
+        /// contraseña elegida y le asigna automáticamente el rol CLIENTE.
+        /// </summary>
+        private const string RolClienteId = "5791103e-11ed-4c6a-9a87-63fcaf3c046c";
+        private const int OtpRegistroExpiracionMin = 10;
+
+        /// <summary>
+        /// Envía un OTP de 6 dígitos al correo para verificarlo antes del registro
+        /// (evita registros automatizados / robots).
+        /// </summary>
+        public async Task<RespuestaDto<TReturn>> SolicitarOtpRegistroAsync<TParam, TReturn>(TParam _param)
+        {
+            var dto = _param as SolicitarOtpRegistroDto;
+
+            if (dto == null || string.IsNullOrWhiteSpace(dto.CorreoElectronico) || !dto.CorreoElectronico.Contains('@'))
+                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "El correo electrónico no es válido.");
+
+            var correoNormalizado = dto.CorreoElectronico.Trim().ToLower();
+
+            var yaRegistrado = await db.TaUsuarioModel.AnyAsync(u => u.CorreoElectronico == correoNormalizado);
+            if (yaRegistrado)
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Ya existe un usuario con el mismo correo electrónico.");
+
+            // Invalida OTPs de registro activos para este correo.
+            var ahora = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
+            var otpsActivos = await db.TaOtpRegistroModel
+                .Where(x => x.Correo == correoNormalizado && !x.Usado && x.FechaExpiracion > ahora)
+                .ToListAsync();
+
+            foreach (var o in otpsActivos)
+            {
+                o.Usado = true;
+                o.FechaUso = ahora;
+            }
+            if (otpsActivos.Count > 0)
+                db.UpdateRange(otpsActivos);
+
+            var otp = OtpUtils.GenerarOtpNumerico(6);
+            var (hash, salt) = OtpUtils.HashOtp(otp);
+
+            db.Add(new TaOtpRegistroModel
+            {
+                OtpRegistroId = Guid.NewGuid(),
+                Correo = correoNormalizado,
+                OtpHash = hash,
+                OtpSalt = salt,
+                FechaCreacion = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified),
+                FechaExpiracion = DateTime.SpecifyKind(DateTime.Now.AddMinutes(OtpRegistroExpiracionMin), DateTimeKind.Unspecified),
+                Usado = false,
+                Intentos = 0,
+                MaxIntentos = 5
+            });
+
+            var nombre = string.IsNullOrWhiteSpace(dto.Nombres) ? "cliente" : dto.Nombres.Trim();
+            var body = CrearCuerpoCorreoOtpRegistro(nombre, otp, OtpRegistroExpiracionMin);
+            var (exito, mensaje) = UtilidadesLogica.EnviarCorreo(
+                _myConfig.CorreoNotificacion,
+                _myConfig.PasswordCorreo,
+                correoNormalizado,
+                "Código de verificación para su registro",
+                body);
+
+            if (!exito)
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, $"No se logró enviar el código al correo: {mensaje}");
+
+            var ok = await db.SaveChangesAsync() > 0;
+
+            if (!ok)
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se logró registrar la solicitud del código.");
+            return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Se envió el código de verificación al correo indicado.");
+        }
+
+        private string CrearCuerpoCorreoOtpRegistro(string nombre, string otp, int minutos)
+        {
+            var fecha = DateTime.Now;
+            return $@"
+            <div style='font-family: Arial, Helvetica, sans-serif; color:#333; font-size:15px; line-height:1.6;'>
+                <div style='font-weight:bold; margin-top:10px;'>
+                    {_myConfig.Municipio}, {fecha.ToLongDateString()}
+                </div>
+
+                <div style='margin-top:20px; font-weight:bold;'>
+                    Estimado(a) {nombre},
+                </div>
+
+                <div style='margin-top:15px; text-align:justify;'>
+                    Para completar su registro en BRADAMELA, ingrese el siguiente
+                    código de verificación en la aplicación:
+                </div>
+
+                <div style='margin-top:20px; padding:15px; border:1px solid #ccc; border-radius:6px; background:#f7f7f7; font-size:22px; font-weight:bold; text-align:center; letter-spacing:4px;'>
+                    {otp}
+                </div>
+
+                <div style='margin-top:15px; text-align:justify;'>
+                    Este código expira en <strong>{minutos} minutos</strong> y solo puede usarse una vez.
+                    Si usted no solicitó este registro, ignore este mensaje.
+                </div>
+
+                <div style='margin-top:25px; font-size:12px; color:#666; text-align:center;'>
+                    Este mensaje ha sido generado automáticamente por el sistema BRADAMELA POS.
+                    Por favor, no responda a este correo.
+                </div>
+            </div>";
+        }
+
+        /// <summary>
+        /// Valida y consume el OTP de registro asociado al correo.
+        /// Devuelve null si es válido, o el mensaje de error.
+        /// </summary>
+        private async Task<string?> ValidarOtpRegistroAsync(string correoNormalizado, string codigoOtp)
+        {
+            var otpDb = await db.TaOtpRegistroModel
+                .Where(x => x.Correo == correoNormalizado && !x.Usado)
+                .OrderByDescending(x => x.FechaCreacion)
+                .FirstOrDefaultAsync();
+
+            if (otpDb == null)
+                return "No existe un código de verificación activo para este correo. Solicite uno nuevo.";
+
+            if (otpDb.FechaExpiracion <= DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified))
+            {
+                otpDb.Usado = true;
+                otpDb.FechaUso = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
+                db.Update(otpDb);
+                await db.SaveChangesAsync();
+                return "El código de verificación ha expirado. Solicite uno nuevo.";
+            }
+
+            if (otpDb.Intentos >= otpDb.MaxIntentos)
+            {
+                otpDb.Usado = true;
+                otpDb.FechaUso = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
+                db.Update(otpDb);
+                await db.SaveChangesAsync();
+                return "Se superó el número máximo de intentos. Solicite un nuevo código.";
+            }
+
+            var valido = OtpUtils.ValidarOtp(codigoOtp.Trim(), otpDb.OtpHash, otpDb.OtpSalt);
+
+            otpDb.Intentos += 1;
+
+            if (!valido)
+            {
+                db.Update(otpDb);
+                await db.SaveChangesAsync();
+                return "El código de verificación es inválido.";
+            }
+
+            // Consumir OTP (se persiste junto con el registro del usuario).
+            otpDb.Usado = true;
+            otpDb.FechaUso = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
+            db.Update(otpDb);
+            return null;
+        }
+
+        public async Task<RespuestaDto<TReturn>> RegistrarClienteAsync<TParam, TReturn>(TParam _param)
+        {
+            var dto = _param as CRegistroClienteDto;
+
+            if (dto == null)
+                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "Objeto incompleto.");
+
+            if (string.IsNullOrWhiteSpace(dto.Nombres) || string.IsNullOrWhiteSpace(dto.Apellidos))
+                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "Los nombres y apellidos son obligatorios.");
+
+            if (dto.Identificacion == null || dto.Identificacion <= 0)
+                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "La identificación es obligatoria.");
+
+            if (string.IsNullOrWhiteSpace(dto.Celular))
+                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "El celular es obligatorio.");
+
+            if (string.IsNullOrWhiteSpace(dto.CorreoElectronico) || !dto.CorreoElectronico.Contains('@'))
+                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "El correo electrónico no es válido.");
+
+            if (string.IsNullOrWhiteSpace(dto.Password) || dto.Password.Trim().Length < 6)
+                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "La contraseña debe tener al menos 6 caracteres.");
+
+            if (string.IsNullOrWhiteSpace(dto.CodigoOtp))
+                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "Debe ingresar el código de verificación enviado a su correo.");
+
+            var nombresNormalizados = dto.Nombres.Trim().ToUpper();
+            var apellidosNormalizados = dto.Apellidos.Trim().ToUpper();
+            var correoNormalizado = dto.CorreoElectronico.Trim().ToLower();
+
+            var usuarioExistente = await db.TaUsuarioModel
+                .FirstOrDefaultAsync(a => a.Identificacion == dto.Identificacion || a.CorreoElectronico == correoNormalizado);
+
+            if (usuarioExistente != null)
+            {
+                if (usuarioExistente.Identificacion == dto.Identificacion)
+                    return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Ya existe un usuario con el mismo número de identificación.");
+
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Ya existe un usuario con el mismo correo electrónico.");
+            }
+
+            // Verificación anti-robot: el correo debe haber sido validado con OTP.
+            var errorOtp = await ValidarOtpRegistroAsync(correoNormalizado, dto.CodigoOtp);
+            if (errorOtp != null)
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, errorOtp);
+
+            string passwordEncriptada = UtilidadesLogica.EncryptPassword(dto.Password.Trim(), _myConfig.Key);
+
+            var nuevoUsuario = new TaUsuarioModel
+            {
+                UsuarioId = Guid.NewGuid().ToString(),
+                Nombres = nombresNormalizados,
+                Apellidos = apellidosNormalizados,
+                Identificacion = dto.Identificacion.Value,
+                Celular = dto.Celular.Trim(),
+                CorreoElectronico = correoNormalizado,
+                Direccion = string.IsNullOrWhiteSpace(dto.Direccion) ? null : dto.Direccion.Trim(),
+                Password = passwordEncriptada,
+                IngresoPrimeraVez = false,
+                Vigente = true
+            };
+
+            var rolCliente = new TaRolUsuarioModel
+            {
+                RolUsuarioId = Guid.NewGuid().ToString(),
+                RolId = RolClienteId,
+                UsuarioId = nuevoUsuario.UsuarioId
+            };
+
+            db.Add(nuevoUsuario);
+            db.Add(rolCliente);
+
+            // Un solo SaveChanges: usuario y rol se guardan de forma atómica.
+            bool resultado = await db.SaveChangesAsync() > 0;
+
+            if (resultado)
+                return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Registro realizado correctamente. Ya puede iniciar sesión.");
+
+            return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
+        }
+
         private string CrearCuerpoCorreo(string nombres, string apellidos, decimal? identificacion, string password, string urlInicio)
         {
             var fecha = DateTime.Now;
@@ -254,6 +491,7 @@ namespace Negocio.Gestion
                     Identificacion = f.Identificacion,
                     Celular = f.Celular,
                     CorreoElectronico = f.CorreoElectronico,
+                    Direccion = f.Direccion,
                     Vigente = f.Vigente,
                     IngresoPrimeraVez = f.IngresoPrimeraVez
 
@@ -284,6 +522,7 @@ namespace Negocio.Gestion
                         Identificacion = f.Identificacion,
                         Celular = f.Celular,
                         CorreoElectronico = f.CorreoElectronico,
+                        Direccion = f.Direccion,
                         Vigente = f.Vigente,
                         IngresoPrimeraVez = f.IngresoPrimeraVez
                     },
@@ -434,11 +673,13 @@ namespace Negocio.Gestion
             if (usuario == null)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No existe un usuario con la identificación o correo proporcionado.");
 
+            var ahora = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
+
             var otpsActivos = await db.Set<TaOtpModel>()
                 .Where(x => x.UsuarioId == usuario.UsuarioId
                             && x.Proposito == "RESET_PASSWORD"
                             && !x.Usado
-                            && x.FechaExpiracion > DateTime.UtcNow)
+                            && x.FechaExpiracion > ahora)
                 .ToListAsync();
 
             if (otpsActivos.Count > 0)
@@ -446,7 +687,7 @@ namespace Negocio.Gestion
                 foreach (var o in otpsActivos)
                 {
                     o.Usado = true;
-                    o.FechaUso = DateTime.UtcNow;
+                    o.FechaUso = ahora;
                 }
                 db.UpdateRange(otpsActivos);
             }
@@ -463,8 +704,8 @@ namespace Negocio.Gestion
                 Proposito = "RESET_PASSWORD",
                 OtpHash = hash,
                 OtpSalt = salt,
-                FechaCreacion = DateTime.UtcNow,
-                FechaExpiracion = DateTime.UtcNow.AddMinutes(expiracionMin),
+                FechaCreacion = ahora,
+                FechaExpiracion = ahora.AddMinutes(expiracionMin),
                 Usado = false,
                 Intentos = 0,
                 MaxIntentos = 5,
@@ -526,15 +767,26 @@ namespace Negocio.Gestion
             </div>";
         }
 
-        public async Task<RespuestaDto<TReturn>> ValidarOtpResetPasswordAsync<TParam, TReturn>(TParam _param)
+        /// <summary>
+        /// Valida el OTP de restablecimiento y, si es correcto, fija la nueva
+        /// contraseña de forma atómica (valida + consume OTP + actualiza clave).
+        /// </summary>
+        public async Task<RespuestaDto<TReturn>> RestablecerPasswordConOtpAsync<TParam, TReturn>(TParam _param)
         {
-            var dto = _param as ValidarOtpResetDto;
+            var dto = _param as RestablecerPasswordOtpDto;
 
-            if (dto == null || string.IsNullOrWhiteSpace(dto.IdentificacionOCorreo) || string.IsNullOrWhiteSpace(dto.Otp))
-                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "Debe enviar la identificación/correo y el OTP.");
+            if (dto == null
+                || string.IsNullOrWhiteSpace(dto.IdentificacionOCorreo)
+                || string.IsNullOrWhiteSpace(dto.Otp)
+                || string.IsNullOrWhiteSpace(dto.NewPassword))
+                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "Debe enviar la identificación/correo, el OTP y la nueva contraseña.");
+
+            if (dto.NewPassword.Trim().Length < 6)
+                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "La contraseña debe tener al menos 6 caracteres.");
 
             var criterio = dto.IdentificacionOCorreo.Trim().ToLower();
             var otpIngresado = dto.Otp.Trim();
+            var ahora = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
 
             var usuario = await db.TaUsuarioModel.FirstOrDefaultAsync(u =>
                 u.CorreoElectronico.ToLower() == criterio ||
@@ -551,33 +803,27 @@ namespace Negocio.Gestion
                 .FirstOrDefaultAsync();
 
             if (otpDb == null)
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No existe un OTP activo para este usuario.");
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No existe un OTP activo. Solicite uno nuevo.");
 
-            // Expiración
-            if (otpDb.FechaExpiracion <= DateTime.UtcNow)
+            if (otpDb.FechaExpiracion <= ahora)
             {
                 otpDb.Usado = true;
-                otpDb.FechaUso = DateTime.UtcNow;
+                otpDb.FechaUso = ahora;
                 db.Update(otpDb);
                 await db.SaveChangesAsync();
-
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "El OTP ha expirado. Solicite uno nuevo.");
             }
 
-            // Intentos
             if (otpDb.Intentos >= otpDb.MaxIntentos)
             {
                 otpDb.Usado = true;
-                otpDb.FechaUso = DateTime.UtcNow;
+                otpDb.FechaUso = ahora;
                 db.Update(otpDb);
                 await db.SaveChangesAsync();
-
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Se superó el número máximo de intentos. Solicite un nuevo OTP.");
             }
 
-            // Validación hash
             var valido = OtpUtils.ValidarOtp(otpIngresado, otpDb.OtpHash, otpDb.OtpSalt);
-
             otpDb.Intentos += 1;
 
             if (!valido)
@@ -587,16 +833,21 @@ namespace Negocio.Gestion
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "OTP inválido.");
             }
 
-            // Consumir OTP
+            // OTP válido: consumir y fijar la nueva contraseña en una sola operación.
             otpDb.Usado = true;
-            otpDb.FechaUso = DateTime.UtcNow;
+            otpDb.FechaUso = ahora;
             db.Update(otpDb);
+
+            string passwordEncriptada = UtilidadesLogica.EncryptPassword(dto.NewPassword.Trim(), _myConfig.Key);
+            usuario.Password = passwordEncriptada;
+            usuario.IngresoPrimeraVez = false;
+            db.Update(usuario);
 
             var ok = await db.SaveChangesAsync() > 0;
 
             if (!ok)
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se pudo completar la validación OTP.");
-            return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "OTP validado correctamente.");
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se pudo restablecer la contraseña.");
+            return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Contraseña restablecida correctamente.");
         }
 
 

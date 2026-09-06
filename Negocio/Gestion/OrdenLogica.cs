@@ -1,4 +1,4 @@
-using Comun.Dto;
+Ôªøusing Comun.Dto;
 using Comun.Dto.DtoParameter;
 using Comun.Dto.DtoReader;
 using Comun.Enumeracion;
@@ -19,27 +19,42 @@ namespace Negocio.Gestion
         private readonly COrdenValidator validatorC;
         private readonly UOrdenValidator validatorU;
         private readonly IFacturacionService _facturacion;
+        private readonly IFcmService _fcm;
+        private readonly IRealtimeNotificador _realtime;
         #endregion
 
         #region Constructor
-        public OrdenLogica(ContextoDb _db, IFacturacionService facturacion)
+        public OrdenLogica(ContextoDb _db, IFacturacionService facturacion, IFcmService fcm, IRealtimeNotificador realtime)
         {
             db = _db;
             validatorC = new COrdenValidator();
             validatorU = new UOrdenValidator();
             _facturacion = facturacion ?? throw new ArgumentNullException(nameof(facturacion));
+            _fcm = fcm ?? throw new ArgumentNullException(nameof(fcm));
+            _realtime = realtime ?? throw new ArgumentNullException(nameof(realtime));
         }
         #endregion
 
-        #region MÈtodos
+        #region M√©todos
 
         static string? Clean(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
         static string? Upper(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim().ToUpperInvariant();
 
+        static object ConstruirPayload(TaOrdenModel m) => new
+        {
+            ordenId = m.OrdenId,
+            codigo = m.Codigo,
+            estadoId = m.EstadoId,
+            mesa = m.Mesa,
+            cliente = m.Cliente,
+            usuarioId = m.UsuarioId,
+            total = m.Total
+        };
+
         public async Task<RespuestaDto<TReturn>> GuardarAsync<TParam, TReturn>(TParam param)
         {
             if (param is not COrdenDto dto)
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Los par·metros de entrada no corresponden a una orden.");
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Los par√°metros de entrada no corresponden a una orden.");
 
             var v = await validatorC.ValidateAsync(dto);
             if (!v.IsValid)
@@ -60,7 +75,9 @@ namespace Negocio.Gestion
                     CantidadItem = dto.CantidadItem,
                     UsuarioId = dto.UsuarioId!.Trim(),
                     Total = dto.Total,
-                    EstadoId = Constantes.Pendiente,
+                    EstadoId = string.IsNullOrWhiteSpace(dto.EstadoId)
+                        ? Constantes.Pendiente
+                        : dto.EstadoId.Trim(),
                     Mesa = dto.Mesa,
                     Codigo = dto.Codigo,
                     Vigente = true,
@@ -120,23 +137,29 @@ namespace Negocio.Gestion
                 if (!guardado)
                 {
                     await transaction.RollbackAsync();
-                    return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se logrÛ guardar los datos de la orden.");
+                    return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se logr√≥ guardar los datos de la orden.");
                 }
 
                 await transaction.CommitAsync();
-                return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "OperaciÛn realizada correctamente.");
+
+                // Tiempo real: solo avisa al personal cuando la orden entra "Por validar"
+                // (creada desde la App del cliente). Las que crea el personal no aplican.
+                if (model.EstadoId == Constantes.PorValidar)
+                    await _realtime.OrdenNuevaAsync(ConstruirPayload(model));
+
+                return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operaci√≥n realizada correctamente.");
             }
             catch (Exception)
             {
                 await transaction.RollbackAsync();
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "OcurriÛ un error al guardar la orden.");
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Ocurri√≥ un error al guardar la orden.");
             }
         }
 
         public async Task<RespuestaDto<TReturn>> ActualizarAsync<TParam, TReturn>(TParam param)
         {
             if (param is not UOrdenDto dto)
-                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "Los datos de la orden no son v·lidos.");
+                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "Los datos de la orden no son v√°lidos.");
 
             var v = await validatorU.ValidateAsync(dto);
             if (!v.IsValid)
@@ -172,7 +195,10 @@ namespace Negocio.Gestion
             var ok = await db.SaveChangesAsync() > 0;
 
             if (!ok)
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "OperaciÛn no exitosa.");
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operaci√≥n no exitosa.");
+
+            // Tiempo real: avisa al personal y al cliente due√±o del cambio de estado.
+            await _realtime.OrdenEstadoCambiadoAsync(model.UsuarioId, ConstruirPayload(model));
 
             if (!string.IsNullOrWhiteSpace(numeroFacturaGenerado))
                 return new RespuestaDto<TReturn>(
@@ -181,7 +207,47 @@ namespace Negocio.Gestion
                     (TReturn)(object)numeroFacturaGenerado
                 );
 
-            return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "OperaciÛn realizada correctamente.");
+            return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operaci√≥n realizada correctamente.");
+        }
+
+
+
+        public async Task<RespuestaDto<TReturn>> AceptarOrdenAsync<TParam, TReturn>(TParam _param)
+        {
+            var ordenId = _param as string;
+            if (string.IsNullOrWhiteSpace(ordenId))
+                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "Identificador de orden inv√°lido.");
+
+            var model = await db.Set<TaOrdenModel>().FindAsync(ordenId.Trim());
+            if (model is null)
+                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "La orden no existe.");
+
+            if (model.EstadoId != Constantes.PorValidar)
+                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "La orden no est√° en estado 'Por validar'.");
+
+            model.EstadoId = Constantes.Pendiente;
+            db.Update(model);
+
+            var ok = await db.SaveChangesAsync() > 0;
+            if (!ok)
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se pudo aceptar la orden.");
+
+            // Notificar al cliente due√±o de la orden (push). No debe romper el flujo.
+            await _fcm.EnviarAsync(
+                model.UsuarioId,
+                "¬°Orden aceptada!",
+                "Tu orden fue aceptada y entr√≥ en preparaci√≥n.",
+                new Dictionary<string, string>
+                {
+                    { "ordenId", model.OrdenId },
+                    { "estadoId", Constantes.Pendiente },
+                    { "tipo", "ORDEN_ACEPTADA" }
+                });
+
+            // Tiempo real: el personal la saca de "Por validar" y el cliente ve el cambio.
+            await _realtime.OrdenEstadoCambiadoAsync(model.UsuarioId, ConstruirPayload(model));
+
+            return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Orden aceptada correctamente.");
         }
 
 
@@ -190,7 +256,7 @@ namespace Negocio.Gestion
         {
             var id = _param as string;
             if (string.IsNullOrWhiteSpace(id))
-                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "Identificador inv·lido.");
+                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "Identificador inv√°lido.");
 
             var model = await db.Set<TaOrdenModel>().FindAsync(id);
             if (model == null)
@@ -200,8 +266,8 @@ namespace Negocio.Gestion
             db.Update(model);
             bool ok = await db.SaveChangesAsync() > 0;
 
-            if (ok) return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "OperaciÛn realizada correctamente.");
-            return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "OperaciÛn no exitosa.");
+            if (ok) return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operaci√≥n realizada correctamente.");
+            return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operaci√≥n no exitosa.");
         }
 
         public async Task<RespuestaDto<TReturn>> ConsultarListaAsync<TReturn>()
@@ -218,6 +284,8 @@ namespace Negocio.Gestion
                     TotalTransferencia = o.TotalTransferencia,
                     UsuarioId = o.UsuarioId,
                     UsuarioIdStr = $"{o.TaUsuarioModel.Nombres} {o.TaUsuarioModel.Apellidos}",
+                    UsuarioCelular = o.TaUsuarioModel.Celular,
+                    UsuarioCorreo = o.TaUsuarioModel.CorreoElectronico,
                     EstadoId = o.EstadoId,
                     EstadoIdStr = o.TaDominioModel.Descripcion,
                     Codigo = o.Codigo,
@@ -257,8 +325,8 @@ namespace Negocio.Gestion
                 .ToListAsync();
 
             if (!resultados.Any())
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se encontraron Ûrdenes.");
-            return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "OperaciÛn exitosa", (TReturn)(object)resultados);
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se encontraron √≥rdenes.");
+            return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operaci√≥n exitosa", (TReturn)(object)resultados);
         }
 
         public async Task<RespuestaDto<TReturn>> ConsultarListaPorEstadoIdAsync<TParam, TReturn>(TParam _param)
@@ -266,7 +334,7 @@ namespace Negocio.Gestion
             var estadoId = _param as string;
 
             if (string.IsNullOrWhiteSpace(estadoId))
-                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "El identificador de estado es inv·lido.");
+                return new RespuestaDto<TReturn>(EstadoOperacion.Validacion, "El identificador de estado es inv√°lido.");
 
             var resultados = await db.Set<TaOrdenModel>()
                 .AsNoTracking()
@@ -281,6 +349,8 @@ namespace Negocio.Gestion
                     TotalTransferencia = o.TotalTransferencia,
                     UsuarioId = o.UsuarioId,
                     UsuarioIdStr = $"{o.TaUsuarioModel.Nombres} {o.TaUsuarioModel.Apellidos}",
+                    UsuarioCelular = o.TaUsuarioModel.Celular,
+                    UsuarioCorreo = o.TaUsuarioModel.CorreoElectronico,
                     EstadoId = o.EstadoId,
                     EstadoIdStr = o.TaDominioModel.Descripcion,
                     Codigo = o.Codigo,
@@ -320,8 +390,8 @@ namespace Negocio.Gestion
                 .ToListAsync();
 
             if (!resultados.Any())
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se encontraron Ûrdenes.");
-            return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "OperaciÛn exitosa", (TReturn)(object)resultados);
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se encontraron √≥rdenes.");
+            return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operaci√≥n exitosa", (TReturn)(object)resultados);
         }
 
         public async Task<RespuestaDto<TReturn>> ConsultarListaOrdenesDelDiaAsync<TReturn>()
@@ -344,6 +414,8 @@ namespace Negocio.Gestion
                     TotalTransferencia = o.TotalTransferencia,
                     UsuarioId = o.UsuarioId,
                     UsuarioIdStr = $"{o.TaUsuarioModel.Nombres} {o.TaUsuarioModel.Apellidos}",
+                    UsuarioCelular = o.TaUsuarioModel.Celular,
+                    UsuarioCorreo = o.TaUsuarioModel.CorreoElectronico,
                     EstadoId = o.EstadoId,
                     EstadoIdStr = o.TaDominioModel.Descripcion,
                     Codigo = o.Codigo,
@@ -383,11 +455,11 @@ namespace Negocio.Gestion
                 .ToListAsync();
 
             if (!resultados.Any())
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se encontraron Ûrdenes.");
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se encontraron √≥rdenes.");
 
             return new RespuestaDto<TReturn>(
                 EstadoOperacion.Bueno,
-                "OperaciÛn exitosa",
+                "Operaci√≥n exitosa",
                 (TReturn)(object)resultados
             );
         }
@@ -413,6 +485,8 @@ namespace Negocio.Gestion
                     TotalTransferencia = o.TotalTransferencia,
                     UsuarioId = o.UsuarioId,
                     UsuarioIdStr = $"{o.TaUsuarioModel.Nombres} {o.TaUsuarioModel.Apellidos}",
+                    UsuarioCelular = o.TaUsuarioModel.Celular,
+                    UsuarioCorreo = o.TaUsuarioModel.CorreoElectronico,
                     EstadoId = o.EstadoId,
                     EstadoIdStr = o.TaDominioModel.Descripcion,
                     Codigo = o.Codigo,
@@ -452,11 +526,11 @@ namespace Negocio.Gestion
                 .ToListAsync();
 
             if (!resultados.Any())
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se encontraron Ûrdenes.");
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se encontraron √≥rdenes.");
 
             return new RespuestaDto<TReturn>(
                 EstadoOperacion.Bueno,
-                "OperaciÛn exitosa",
+                "Operaci√≥n exitosa",
                 (TReturn)(object)resultados
             );
         }
@@ -486,6 +560,8 @@ namespace Negocio.Gestion
                     TotalTransferencia = o.TotalTransferencia,
                     UsuarioId = o.UsuarioId,
                     UsuarioIdStr = $"{o.TaUsuarioModel.Nombres} {o.TaUsuarioModel.Apellidos}",
+                    UsuarioCelular = o.TaUsuarioModel.Celular,
+                    UsuarioCorreo = o.TaUsuarioModel.CorreoElectronico,
                     EstadoId = o.EstadoId,
                     EstadoIdStr = o.TaDominioModel.Descripcion,
                     Codigo = o.Codigo,
@@ -525,9 +601,9 @@ namespace Negocio.Gestion
                 .ToListAsync();
 
             if (!resultados.Any())
-                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se encontraron Ûrdenes.");
+                return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se encontraron √≥rdenes.");
 
-            return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "OperaciÛn exitosa", (TReturn)(object)resultados);
+            return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operaci√≥n exitosa", (TReturn)(object)resultados);
         }
         #endregion
     }

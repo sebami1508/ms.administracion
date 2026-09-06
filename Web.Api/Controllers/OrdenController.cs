@@ -35,6 +35,13 @@ namespace WebApi.Controllers
             return Ok(await orden.ActualizarAsync<UOrdenDto, string>(_param));
         }
 
+        [HttpPut]
+        [Route("[Action]")]
+        public async Task<IActionResult> AceptarOrden([FromQuery] string _param)
+        {
+            return Ok(await orden.AceptarOrdenAsync<string, bool>(_param));
+        }
+
         [HttpDelete]
         [Route("[Action]")]
         public async Task<IActionResult> Eliminar(string _param)

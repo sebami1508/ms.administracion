@@ -7,6 +7,8 @@
         public string CorreoNotificacion { get; set; }
         public string PasswordCorreo { get; set; }
         public string Municipio { get; set; }
+        public string? FirebaseProjectId { get; set; }
+        public string? FirebaseCredentialPath { get; set; }
 
     }
 }

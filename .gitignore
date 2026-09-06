@@ -366,3 +366,7 @@ FodyWeavers.xsd
 
 
 WebApi/Log 21-5-2024.txt
+
+# Firebase - clave de cuenta de servicio (secreta - NO subir)
+**/firebase-service-account.json
+**/*firebase-adminsdk*.json

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Negocio.Contrato;
 using Negocio.Gestion;
 using System.Globalization;
+using Web.Api.Realtime;
 
 namespace Web.Api.Extension
 {
@@ -35,6 +36,9 @@ namespace Web.Api.Extension
             _builder.Services.AddScoped<IItem, ItemLogica>();
             _builder.Services.AddScoped<IFacturacionService, FacturacionService>();
             _builder.Services.AddScoped<ITurno, TurnoLogica>();
+            _builder.Services.AddScoped<IFcmService, FcmService>();
+            _builder.Services.AddScoped<IMenuCarta, MenuCartaLogica>();
+            _builder.Services.AddScoped<IRealtimeNotificador, RealtimeNotificador>();
         }
     }
 }

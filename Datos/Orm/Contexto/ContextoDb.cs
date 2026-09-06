@@ -24,6 +24,10 @@ namespace Datos.Orm.Contexto
         public DbSet<TaCaracteristicaModel> TaPizzaModel { get; set; }
         public DbSet<TaConsecutivoFacturaModel> TaConsecutivoFacturaModel { get; set; }
         public DbSet<TaTurnoModel> TaTurnoModel { get; set; }
+        public DbSet<TaOtpRegistroModel> TaOtpRegistroModel { get; set; }
+        public DbSet<TaOtpModel> TaOtpModel { get; set; }
+        public DbSet<TaDispositivoFcmModel> TaDispositivoFcmModel { get; set; }
+        public DbSet<TaMenuCartaModel> TaMenuCartaModel { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -43,6 +47,10 @@ namespace Datos.Orm.Contexto
             modelBuilder.ApplyConfiguration(new TaCaracteristicaModelEtc());
             modelBuilder.ApplyConfiguration(new TaConsecutivoFacturaModelEtc());
             modelBuilder.ApplyConfiguration(new TaTurnoModelEtc());
+            modelBuilder.ApplyConfiguration(new TaOtpRegistroModelEtc());
+            modelBuilder.ApplyConfiguration(new TaOtpModelEtc());
+            modelBuilder.ApplyConfiguration(new TaDispositivoFcmModelEtc());
+            modelBuilder.ApplyConfiguration(new TaMenuCartaModelEtc());
 
             modelBuilder.Entity<TaOrdenModel>()
             .Property(x => x.FechaRegistro)

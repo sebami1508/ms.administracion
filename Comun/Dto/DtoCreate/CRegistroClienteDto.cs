@@ -1,17 +1,17 @@
-﻿namespace Comun.Dto.DtoParameter
+namespace Comun.Dto.DtoParameter
 {
-    public class RUsuarioDto
+    /// <summary>
+    /// Registro de cliente desde la app móvil (autoservicio).
+    /// </summary>
+    public class CRegistroClienteDto
     {
-        public string? UsuarioId { get; set; }
         public string? Nombres { get; set; }
         public string? Apellidos { get; set; }
         public decimal? Identificacion { get; set; }
         public string? Celular { get; set; }
         public string? CorreoElectronico { get; set; }
         public string? Direccion { get; set; }
-        public bool Vigente { get; set; }
         public string? Password { get; set; }
-        public bool IngresoPrimeraVez { get; set; }
-
+        public string? CodigoOtp { get; set; }
     }
 }

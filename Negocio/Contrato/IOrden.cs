@@ -9,5 +9,6 @@ namespace Negocio.Contrato
         Task<RespuestaDto<TReturn>> ConsultarListaOrdenesPorTurnoIdAsync<TParam, TReturn>(TParam _param);
         Task<RespuestaDto<TReturn>> ConsultarListaOrdenesRangoDeFechasAsync<TParam, TReturn>(TParam _param);
         Task<RespuestaDto<TReturn>> ConsultarListaPorEstadoIdAsync<TParam, TReturn>(TParam _param);
+        Task<RespuestaDto<TReturn>> AceptarOrdenAsync<TParam, TReturn>(TParam _param);
     }
 }
