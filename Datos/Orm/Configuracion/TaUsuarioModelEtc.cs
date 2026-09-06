@@ -36,6 +36,10 @@ namespace Datos.Orm.Configuracion
                    .HasColumnName("CORREO_ELECTRONICO")
                    .HasMaxLength(150);
 
+            builder.Property(s => s.Direccion)
+                   .HasColumnName("DIRECCION")
+                   .HasMaxLength(250);
+
             builder.Property(s => s.Password)
                   .HasColumnName("PASSWORD")
                   .HasMaxLength(500);

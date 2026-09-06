@@ -12,6 +12,7 @@
         public const string Pendiente = "3a2cec99-d19a-4f3d-a7df-177688b9bd8c";
         public const string Facturada = "671bf211-dc67-4d6d-a926-613e8d3ad1cc";
         public const string Cancelada = "59837ce6-faad-409b-80d6-7d2b055480ee";
+        public const string PorValidar = "f4f739f2-5892-4fc1-82d3-1130c81217f2";
         #endregion
 
         #region Estados Ordenes

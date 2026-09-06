@@ -14,6 +14,13 @@ namespace Comun.Dto.DtoParameter
         public string? Direccion { get; set; }
         public string TurnoId { get; set; } = null!;
 
+        /// <summary>
+        /// Estado inicial opcional. Si no se envía, la orden se crea como
+        /// Pendiente. Las órdenes creadas por clientes desde la App envían
+        /// el estado "Por validar".
+        /// </summary>
+        public string? EstadoId { get; set; }
+
         public List<CItemDto> Productos { get; set; } = new List<CItemDto>();
         
     }

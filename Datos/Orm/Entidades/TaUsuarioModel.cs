@@ -10,6 +10,7 @@
         public decimal Identificacion { get; set; }
         public string Celular { get; set; } = null!;
         public string CorreoElectronico { get; set; } = null!;
+        public string? Direccion { get; set; }
         public string Password { get; set; } = null!;
         public bool IngresoPrimeraVez { get; set; }
         public bool Vigente { get; set; }

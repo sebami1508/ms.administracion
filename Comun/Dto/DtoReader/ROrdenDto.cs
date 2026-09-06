@@ -11,6 +11,8 @@ namespace Comun.Dto.DtoReader
         public decimal? TotalTransferencia { get; set; }
         public string? UsuarioId { get; set; }
         public string? UsuarioIdStr { get; set; }
+        public string? UsuarioCelular { get; set; }
+        public string? UsuarioCorreo { get; set; }
         public string? EstadoId { get; set; }
         public string? EstadoIdStr { get; set; }
         public int? Mesa { get; set; }
