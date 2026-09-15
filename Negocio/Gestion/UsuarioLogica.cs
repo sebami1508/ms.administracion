@@ -177,35 +177,69 @@ namespace Negocio.Gestion
 
         private string CrearCuerpoCorreoOtpRegistro(string nombre, string otp, int minutos)
         {
-            var fecha = DateTime.Now;
+            var saludo = $"Estimado(a) {nombre},";
+            var intro = "Para completar tu registro en Bradamela App, ingresa el siguiente " +
+                        "código de verificación en la aplicación:";
+            var aviso = "Si no solicitaste este registro, ignora este mensaje.";
+            return PlantillaCorreoOtp(saludo, intro, otp, minutos, aviso);
+        }
+
+        /// <summary>
+        /// Plantilla HTML de los correos con código OTP (registro y restablecimiento),
+        /// con la identidad visual de Bradamela App (morado y dorado). Usa el logo
+        /// embebido (cid:logo) y muestra solo la fecha (sin ciudad).
+        /// </summary>
+        private string PlantillaCorreoOtp(string saludo, string intro, string otp, int minutos, string aviso)
+        {
+            var fecha = DateTime.Now.ToLongDateString();
             return $@"
-            <div style='font-family: Arial, Helvetica, sans-serif; color:#333; font-size:15px; line-height:1.6;'>
-                <div style='font-weight:bold; margin-top:10px;'>
-                    {_myConfig.Municipio}, {fecha.ToLongDateString()}
-                </div>
-
-                <div style='margin-top:20px; font-weight:bold;'>
-                    Estimado(a) {nombre},
-                </div>
-
-                <div style='margin-top:15px; text-align:justify;'>
-                    Para completar su registro en BRADAMELA, ingrese el siguiente
-                    código de verificación en la aplicación:
-                </div>
-
-                <div style='margin-top:20px; padding:15px; border:1px solid #ccc; border-radius:6px; background:#f7f7f7; font-size:22px; font-weight:bold; text-align:center; letter-spacing:4px;'>
-                    {otp}
-                </div>
-
-                <div style='margin-top:15px; text-align:justify;'>
-                    Este código expira en <strong>{minutos} minutos</strong> y solo puede usarse una vez.
-                    Si usted no solicitó este registro, ignore este mensaje.
-                </div>
-
-                <div style='margin-top:25px; font-size:12px; color:#666; text-align:center;'>
-                    Este mensaje ha sido generado automáticamente por el sistema BRADAMELA POS.
-                    Por favor, no responda a este correo.
-                </div>
+            <div style='background:#f4eff8; padding:24px 12px; font-family:Arial,Helvetica,sans-serif;'>
+              <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='max-width:600px; margin:0 auto; border-collapse:collapse;'>
+                <tr>
+                  <td bgcolor='#522566' style='background:#522566; padding:34px 24px 28px; text-align:center; border-radius:16px 16px 0 0;'>
+                    <table role='presentation' align='center' cellpadding='0' cellspacing='0' style='margin:0 auto;'>
+                      <tr>
+                        <td bgcolor='#ffffff' style='background:#ffffff; border-radius:18px; padding:16px 22px;'>
+                          <img src='cid:logo' width='300' alt='Bradamela App' style='display:block; width:300px; max-width:100%; height:auto; border:0;' />
+                        </td>
+                      </tr>
+                    </table>
+                    <div style='color:#F4B942; font-size:26px; font-weight:bold; letter-spacing:1px; margin-top:20px;'>BRADAMELA APP</div>
+                    <table role='presentation' align='center' cellpadding='0' cellspacing='0' style='margin:12px auto 0;'>
+                      <tr><td height='3' bgcolor='#F4B942' style='width:64px; height:3px; line-height:3px; font-size:0;'>&nbsp;</td></tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td bgcolor='#ffffff' style='background:#ffffff; padding:26px 28px 6px; color:#2E1140;'>
+                    <div style='font-size:13px; color:#8A8394; text-align:right;'>{fecha}</div>
+                    <div style='font-size:16px; font-weight:bold; margin-top:6px; color:#2E1140;'>{saludo}</div>
+                    <div style='font-size:15px; line-height:1.6; margin-top:12px; color:#241C2B; text-align:justify;'>{intro}</div>
+                  </td>
+                </tr>
+                <tr>
+                  <td bgcolor='#ffffff' style='background:#ffffff; padding:8px 28px 4px;'>
+                    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='border-collapse:collapse;'>
+                      <tr>
+                        <td bgcolor='#F3EEF7' style='background:#F3EEF7; border:2px solid #F4B942; border-radius:12px; padding:18px; text-align:center;'>
+                          <div style='font-size:12px; color:#7A3A8E; font-weight:bold; letter-spacing:3px;'>TU CÓDIGO</div>
+                          <div style='font-size:34px; font-weight:bold; color:#522566; letter-spacing:10px; margin-top:8px;'>{otp}</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <tr>
+                  <td bgcolor='#ffffff' style='background:#ffffff; padding:16px 28px 26px; color:#6B6577; font-size:14px; line-height:1.6; text-align:justify;'>
+                    Este código expira en <strong style='color:#2E1140;'>{minutos} minutos</strong> y solo puede usarse una vez. {aviso}
+                  </td>
+                </tr>
+                <tr>
+                  <td bgcolor='#2E1140' style='background:#2E1140; padding:18px 24px; text-align:center; border-radius:0 0 16px 16px;'>
+                    <div style='color:#EADFF0; font-size:12px; line-height:1.5;'>Mensaje automático de <strong style='color:#F4B942;'>Bradamela App</strong>. Por favor, no respondas a este correo.</div>
+                  </td>
+                </tr>
+              </table>
             </div>";
         }
 
@@ -735,36 +769,11 @@ namespace Negocio.Gestion
 
         private string CrearCuerpoCorreoOtp(string nombres, string apellidos, string otp, int minutos)
         {
-            var fecha = DateTime.Now;
-            return $@"
-            <div style='font-family: Arial, Helvetica, sans-serif; color:#333; font-size:15px; line-height:1.6;'>
-                <div style='font-weight:bold; margin-top:10px;'>
-                    {_myConfig.Municipio}, {fecha.ToLongDateString()}
-                </div>
-
-                <div style='margin-top:20px; font-weight:bold;'>
-                    Estimado(a) {nombres} {apellidos},
-                </div>
-
-                <div style='margin-top:15px; text-align:justify;'>
-                    Hemos recibido una solicitud para restablecer su contraseña.
-                    Para continuar, ingrese el siguiente código OTP:
-                </div>
-
-                <div style='margin-top:20px; padding:15px; border:1px solid #ccc; border-radius:6px; background:#f7f7f7; font-size:22px; font-weight:bold; text-align:center; letter-spacing:4px;'>
-                    {otp}
-                </div>
-
-                <div style='margin-top:15px; text-align:justify;'>
-                    Este código expira en <strong>{minutos} minutos</strong> y solo puede usarse una vez.
-                    Si usted no solicitó este cambio, ignore este mensaje.
-                </div>
-
-                <div style='margin-top:25px; font-size:12px; color:#666; text-align:center;'>
-                    Este mensaje ha sido generado automáticamente por el sistema BRADAMELA POS.
-                    Por favor, no responda a este correo.
-                </div>
-            </div>";
+            var saludo = $"Estimado(a) {nombres} {apellidos},";
+            var intro = "Recibimos una solicitud para restablecer tu contraseña. " +
+                        "Para continuar, ingresa el siguiente código:";
+            var aviso = "Si no solicitaste este cambio, ignora este mensaje.";
+            return PlantillaCorreoOtp(saludo, intro, otp, minutos, aviso);
         }
 
         /// <summary>
