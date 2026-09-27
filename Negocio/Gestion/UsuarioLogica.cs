@@ -88,7 +88,7 @@ namespace Negocio.Gestion
                 Celular = dto.Celular.Trim(),
                 CorreoElectronico = correoNormalizado,
                 Password = passwordEncriptada,
-                IngresoPrimeraVez = false,
+                IngresoPrimeraVez = true,
                 Vigente = true
             };
 
