@@ -1,3 +1,4 @@
+using Comun.Enumeracion;
 using Comun.Dto.DtoParameter;
 using Comun.Dto;
 using Microsoft.AspNetCore.Authorization;
@@ -24,6 +25,7 @@ namespace WebApi.Controllers
 
         [HttpPost]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Guardar(CProductoDto? _param)
         {
             return Ok(await producto.GuardarAsync<CProductoDto, bool>(_param));
@@ -31,6 +33,7 @@ namespace WebApi.Controllers
 
         [HttpPut]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Actualizar(UProductoDto? _param)
         {
             return Ok(await producto.ActualizarAsync<UProductoDto, bool>(_param));
@@ -38,6 +41,7 @@ namespace WebApi.Controllers
 
         [HttpDelete]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Eliminar(EliminarDto _param)
         {
             return Ok(await producto.EliminarAsync<EliminarDto, bool>(_param));
@@ -52,6 +56,7 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> ExportarExcel()
         {
             var r = await producto.ExportarExcelAsync<byte[]>();
@@ -67,6 +72,7 @@ namespace WebApi.Controllers
         [HttpPost]
         [Route("[Action]")]
         [Consumes(MediaTypeNames.Multipart.FormData)]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> ImportarExcel([FromForm] IFormFile archivo)
         {
             await using var stream = archivo.OpenReadStream();

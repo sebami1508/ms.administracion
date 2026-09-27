@@ -1,5 +1,7 @@
 ﻿using Comun.Dto.DtoParameter;
+using Comun.Enumeracion;
 using Microsoft.AspNetCore.Authorization;
+using Web.Api.Extension;
 using Microsoft.AspNetCore.Mvc;
 using Negocio.Contrato;
 
@@ -31,6 +33,7 @@ namespace WebApi.Controllers
 
         [HttpPost]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Guardar(CUsuarioDto? _param)
         {
             return Ok(await usuario.GuardarAsync<CUsuarioDto, bool>(_param));
@@ -56,11 +59,15 @@ namespace WebApi.Controllers
         [Route("[Action]")]
         public async Task<IActionResult> Actualizar(UUsuarioDto? _param)
         {
+            if (!User.EsAdministrador() && !User.EsElMismo(_param?.UsuarioId))
+                return this.NoAutorizado("Solo puede actualizar sus propios datos.");
+
             return Ok(await usuario.ActualizarAsync<UUsuarioDto, bool>(_param));
         }
 
         [HttpPut]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> ActualizarVigencia(UUsuarioDto? _param)
         {
             return Ok(await usuario.ActualizarVigenciaAsync<UUsuarioDto, bool>(_param));
@@ -68,6 +75,7 @@ namespace WebApi.Controllers
 
         [HttpPut]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Eliminar(string? _param)
         {
             return Ok(await usuario.EliminarAsync<string, bool>(_param));
@@ -93,11 +101,15 @@ namespace WebApi.Controllers
         [Route("[Action]")]
         public async Task<IActionResult> ActualizarPassword(UUsuarioDto? _param)
         {
+            if (!User.EsElMismo(_param?.UsuarioId))
+                return this.NoAutorizado("Solo puede cambiar su propia contraseña.");
+
             return Ok(await usuario.ActualizarPasswordAsync<UUsuarioDto, bool>(_param));
         }
 
         [HttpGet]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> ConsultarLista()
         {
             return Ok(await usuario.ConsultarListaAsync<List<RUsuarioDto>>());
@@ -105,6 +117,7 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> EnviarNuevaPassword(string? _param)
         {
             return Ok(await usuario.EnviarNuevaPasswordAsync<string, bool>(_param));
@@ -115,6 +128,9 @@ namespace WebApi.Controllers
         [Route("[Action]")]
         public async Task<IActionResult> ConsultarUsuarioPorIdentificacion(string? _param)
         {
+            if (!User.EsPersonal() && !User.EsMiIdentificacion(_param))
+                return this.NoAutorizado("Solo puede consultar sus propios datos.");
+
             return Ok(await usuario.ConsultarUsuarioPorIdentificacionAnsync<string, RUsuarioDatosDto>(_param));
         }
 

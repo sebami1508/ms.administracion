@@ -1,3 +1,4 @@
+using Comun.Enumeracion;
 using Comun.Dto.DtoParameter;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,9 +24,10 @@ namespace WebApi.Controllers
         }
         #endregion
 
-        #region Métodos
+        #region Mï¿½todos
         [HttpPost]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Guardar(CPerfilDto? _param)
         {
             return Ok(await perfil.GuardarAsync<CPerfilDto, bool>(_param));
@@ -33,6 +35,7 @@ namespace WebApi.Controllers
 
         [HttpPut]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Actualizar(UPerfilDto? _param)
         {
             return Ok(await perfil.ActualizarAsync<UPerfilDto, bool>(_param));
@@ -40,6 +43,7 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Eliminar(string _param)
         {
             return Ok(await perfil.EliminarAsync<string, bool>(_param));
@@ -47,6 +51,7 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> ConsultarLista()
         {
             return Ok(await perfil.ConsultarListaAsync<List<RPerfilDto>>());
@@ -61,6 +66,7 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> ConsultarMenusPorRol(string _param)
         {
             return Ok(await perfil.ConsultarMenusPorRolAsync<string, List<RMenuGrupoDto>>(_param));

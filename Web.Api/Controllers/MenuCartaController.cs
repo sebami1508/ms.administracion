@@ -1,3 +1,4 @@
+using Comun.Enumeracion;
 using Comun.Dto.DtoParameter;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,6 +22,7 @@ namespace WebApi.Controllers
 
         [HttpPost]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Guardar(CMenuCartaDto? _param)
         {
             return Ok(await menuCarta.GuardarAsync<CMenuCartaDto, bool>(_param));

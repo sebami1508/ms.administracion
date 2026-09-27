@@ -1,3 +1,4 @@
+using Comun.Enumeracion;
 using Comun.Dto.DtoParameter;
 using Comun.Dto;
 using Comun.Dto.DtoReader;
@@ -24,6 +25,7 @@ namespace WebApi.Controllers
 
         [HttpPost]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesPersonal)]
         public async Task<IActionResult> Guardar(CItemDto? _param)
         {
             return Ok(await item.GuardarAsync<CItemDto, bool>(_param));
@@ -31,6 +33,7 @@ namespace WebApi.Controllers
 
         [HttpPut]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesPersonal)]
         public async Task<IActionResult> Actualizar(UItemDto? _param)
         {
             return Ok(await item.ActualizarAsync<UItemDto, bool>(_param));
@@ -38,6 +41,7 @@ namespace WebApi.Controllers
 
         [HttpDelete]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesPersonal)]
         public async Task<IActionResult> Eliminar(EliminarDto _param)
         {
             return Ok(await item.EliminarAsync<EliminarDto, bool>(_param));
@@ -45,6 +49,7 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesPersonal)]
         public async Task<IActionResult> ConsultarLista()
         {
             return Ok(await item.ConsultarListaAsync<List<RItemDto>>());

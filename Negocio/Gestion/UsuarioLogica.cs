@@ -73,8 +73,8 @@ namespace Negocio.Gestion
             string password = UtilidadesLogica.GenerarPassword();
             string passwordEncriptada = UtilidadesLogica.EncryptPassword(password, _myConfig.Key);
 
-            var cuerpoCorreo = CrearCuerpoCorreo(nombresNormalizados, apellidosNormalizados, dto.Identificacion, password, _myConfig.UrlInicioSesion);
-            var (exito, mensaje) = UtilidadesLogica.EnviarCorreo(_myConfig.CorreoNotificacion, _myConfig.PasswordCorreo, correoNormalizado, "Notificación creación de usuario", cuerpoCorreo);
+            var correo = PlantillaCorreo.UsuarioCreado(nombresNormalizados, dto.Identificacion, password, _myConfig.UrlInicioSesion, _myConfig.Municipio);
+            var (exito, mensaje) = UtilidadesLogica.EnviarCorreo(_myConfig.CorreoNotificacion, _myConfig.PasswordCorreo, correoNormalizado, "Bienvenido(a) a Bradamela: tus datos de acceso", correo.Html, correo.Texto);
 
             if (!exito)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, $"No se logró enviar el correo al usuario: {mensaje}");
@@ -156,14 +156,14 @@ namespace Negocio.Gestion
                 MaxIntentos = 5
             });
 
-            var nombre = string.IsNullOrWhiteSpace(dto.Nombres) ? "cliente" : dto.Nombres.Trim();
-            var body = CrearCuerpoCorreoOtpRegistro(nombre, otp, OtpRegistroExpiracionMin);
+            var correo = PlantillaCorreo.CodigoRegistro(dto.Nombres, otp, OtpRegistroExpiracionMin, _myConfig.Municipio);
             var (exito, mensaje) = UtilidadesLogica.EnviarCorreo(
                 _myConfig.CorreoNotificacion,
                 _myConfig.PasswordCorreo,
                 correoNormalizado,
-                "Código de verificación para su registro",
-                body);
+                "Tu código de verificación de Bradamela",
+                correo.Html,
+                correo.Texto);
 
             if (!exito)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, $"No se logró enviar el código al correo: {mensaje}");
@@ -173,74 +173,6 @@ namespace Negocio.Gestion
             if (!ok)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se logró registrar la solicitud del código.");
             return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Se envió el código de verificación al correo indicado.");
-        }
-
-        private string CrearCuerpoCorreoOtpRegistro(string nombre, string otp, int minutos)
-        {
-            var saludo = $"Estimado(a) {nombre},";
-            var intro = "Para completar tu registro en Bradamela App, ingresa el siguiente " +
-                        "código de verificación en la aplicación:";
-            var aviso = "Si no solicitaste este registro, ignora este mensaje.";
-            return PlantillaCorreoOtp(saludo, intro, otp, minutos, aviso);
-        }
-
-        /// <summary>
-        /// Plantilla HTML de los correos con código OTP (registro y restablecimiento),
-        /// con la identidad visual de Bradamela App (morado y dorado). Usa el logo
-        /// embebido (cid:logo) y muestra solo la fecha (sin ciudad).
-        /// </summary>
-        private string PlantillaCorreoOtp(string saludo, string intro, string otp, int minutos, string aviso)
-        {
-            var fecha = DateTime.Now.ToLongDateString();
-            return $@"
-            <div style='background:#f4eff8; padding:24px 12px; font-family:Arial,Helvetica,sans-serif;'>
-              <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='max-width:600px; margin:0 auto; border-collapse:collapse;'>
-                <tr>
-                  <td bgcolor='#522566' style='background:#522566; padding:34px 24px 28px; text-align:center; border-radius:16px 16px 0 0;'>
-                    <table role='presentation' align='center' cellpadding='0' cellspacing='0' style='margin:0 auto;'>
-                      <tr>
-                        <td bgcolor='#ffffff' style='background:#ffffff; border-radius:18px; padding:16px 22px;'>
-                          <img src='cid:logo' width='300' alt='Bradamela App' style='display:block; width:300px; max-width:100%; height:auto; border:0;' />
-                        </td>
-                      </tr>
-                    </table>
-                    <div style='color:#F4B942; font-size:26px; font-weight:bold; letter-spacing:1px; margin-top:20px;'>BRADAMELA APP</div>
-                    <table role='presentation' align='center' cellpadding='0' cellspacing='0' style='margin:12px auto 0;'>
-                      <tr><td height='3' bgcolor='#F4B942' style='width:64px; height:3px; line-height:3px; font-size:0;'>&nbsp;</td></tr>
-                    </table>
-                  </td>
-                </tr>
-                <tr>
-                  <td bgcolor='#ffffff' style='background:#ffffff; padding:26px 28px 6px; color:#2E1140;'>
-                    <div style='font-size:13px; color:#8A8394; text-align:right;'>{fecha}</div>
-                    <div style='font-size:16px; font-weight:bold; margin-top:6px; color:#2E1140;'>{saludo}</div>
-                    <div style='font-size:15px; line-height:1.6; margin-top:12px; color:#241C2B; text-align:justify;'>{intro}</div>
-                  </td>
-                </tr>
-                <tr>
-                  <td bgcolor='#ffffff' style='background:#ffffff; padding:8px 28px 4px;'>
-                    <table role='presentation' width='100%' cellpadding='0' cellspacing='0' style='border-collapse:collapse;'>
-                      <tr>
-                        <td bgcolor='#F3EEF7' style='background:#F3EEF7; border:2px solid #F4B942; border-radius:12px; padding:18px; text-align:center;'>
-                          <div style='font-size:12px; color:#7A3A8E; font-weight:bold; letter-spacing:3px;'>TU CÓDIGO</div>
-                          <div style='font-size:34px; font-weight:bold; color:#522566; letter-spacing:10px; margin-top:8px;'>{otp}</div>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-                <tr>
-                  <td bgcolor='#ffffff' style='background:#ffffff; padding:16px 28px 26px; color:#6B6577; font-size:14px; line-height:1.6; text-align:justify;'>
-                    Este código expira en <strong style='color:#2E1140;'>{minutos} minutos</strong> y solo puede usarse una vez. {aviso}
-                  </td>
-                </tr>
-                <tr>
-                  <td bgcolor='#2E1140' style='background:#2E1140; padding:18px 24px; text-align:center; border-radius:0 0 16px 16px;'>
-                    <div style='color:#EADFF0; font-size:12px; line-height:1.5;'>Mensaje automático de <strong style='color:#F4B942;'>Bradamela App</strong>. Por favor, no respondas a este correo.</div>
-                  </td>
-                </tr>
-              </table>
-            </div>";
         }
 
         /// <summary>
@@ -371,54 +303,6 @@ namespace Negocio.Gestion
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Registro realizado correctamente. Ya puede iniciar sesión.");
 
             return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
-        }
-
-        private string CrearCuerpoCorreo(string nombres, string apellidos, decimal? identificacion, string password, string urlInicio)
-        {
-            var fecha = DateTime.Now;
-
-            return $@"
-                <div style='font-family: Arial, Helvetica, sans-serif; color:#333; font-size:15px; line-height:1.6;'>
-
-                    <div style='font-weight:bold; margin-top:10px;'>
-                        {_myConfig.Municipio}, {fecha.ToLongDateString()}
-                    </div>
-
-                    <div style='margin-top:20px; font-weight:bold;'>
-                        Estimado(a) {nombres} {apellidos},
-                    </div>
-
-                    <div style='margin-top:15px; text-align:justify;'>
-                        Le informamos que se ha creado su usuario de acceso al sistema BRADAMELA.
-                        A continuación encontrará sus credenciales iniciales:
-                    </div>
-
-                    <div style='margin-top:20px; padding:15px; border:1px solid #ccc; border-radius:6px; background:#f7f7f7;'>
-                        <div><strong>Usuario:</strong> {identificacion}</div>
-                        <div style='margin-top:8px;'><strong>Contraseña temporal:</strong> {password}</div>
-                    </div>
-
-                    <div style='margin-top:20px;'>
-                        <a href='{urlInicio}'
-                           style='display:inline-block; padding:10px 22px; background:#572364; color:#fff;
-                                  text-decoration:none; border-radius:6px; font-weight:bold; text-transform:uppercase;'>
-                            Iniciar sesión
-                        </a>
-                    </div>
-
-                    <div style='margin-top:20px; text-align:justify;'>
-                        El acceso al sistema se encuentra condicionado a los roles y permisos asignados.
-                        Por motivos de seguridad, esta contraseña es de carácter temporal y deberá ser cambiada
-                        una vez ingrese al sistema. Recuerde que esta información es personal y confidencial,
-                        por lo que no debe compartirla con terceros.
-                    </div>
-
-                    <div style='margin-top:25px; font-size:12px; color:#666; text-align:center;'>
-                        Este mensaje ha sido generado automáticamente por el sistema.
-                        Por favor, no responda a este correo.
-                    </div>
-
-                </div>";
         }
 
 
@@ -585,52 +469,8 @@ namespace Negocio.Gestion
             if (model == null)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No existe el usuario.");
 
-            DateTime fecha = DateTime.Now;
-            var body = $@"
-            <div style='font-family: Arial, Helvetica, sans-serif; color:#333; font-size: 15px; line-height: 1.6;'>
-
-                <div style='margin-top: 10px; font-weight: bold;'>
-                   {_myConfig.Municipio}, {fecha.ToLongDateString()}
-                </div>
-
-                <div style='margin-top: 20px; font-weight: bold;'>
-                    Estimado(a) {model.Nombres} {model.Apellidos},
-                </div>
-
-                <div style='margin-top: 15px; text-align: justify;'>
-                    Le informamos que su contraseña ha sido restablecida correctamente. A continuación,
-                    encontrará las credenciales temporales de acceso. Por motivos de seguridad,
-                    deberá cambiar la contraseña una vez inicie sesión en el sistema.
-                </div>
-
-                <div style='margin-top: 20px; padding: 15px; border: 1px solid #ccc; border-radius: 6px; background:#f7f7f7;'>
-                    <div><strong>Usuario:</strong> {model.Identificacion}</div>
-                    <div style='margin-top: 8px;'><strong>Contraseña temporal:</strong> {password}</div>
-                </div>
-
-                <div style='margin-top: 20px;'>
-                    <a href='{urlInicio}'
-                       style='display:inline-block; padding:10px 22px; background:#572364; color:#fff;
-                              text-decoration:none; border-radius:6px; font-weight:bold; text-transform:uppercase;'>
-                        Iniciar sesión
-                    </a>
-                </div>
-
-                <div style='margin-top: 20px; text-align: justify;'>
-                    El acceso al sistema se encuentra condicionado a los roles y permisos asignados.
-                    Recuerde que esta información es confidencial y de uso personal; no debe ser compartida
-                    bajo ninguna circunstancia.
-                </div>
-
-                <div style='margin-top: 25px; font-size: 12px; color:#666; text-align:center;'>
-                    Este mensaje ha sido generado automáticamente por el sistema BRADAMELA POS.
-                    Por favor, no responda a este correo.
-                </div>
-
-            </div>";
-
-
-            var (exito, mensaje) = UtilidadesLogica.EnviarCorreo(_myConfig.CorreoNotificacion, _myConfig.PasswordCorreo, model.CorreoElectronico, "Notificación restablecimiento contraseña", body);
+            var correo = PlantillaCorreo.PasswordRestablecida(model.Nombres, model.Identificacion, password, urlInicio, _myConfig.Municipio);
+            var (exito, mensaje) = UtilidadesLogica.EnviarCorreo(_myConfig.CorreoNotificacion, _myConfig.PasswordCorreo, model.CorreoElectronico, "Tu nueva contraseña temporal de Bradamela", correo.Html, correo.Texto);
 
             if (!exito)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, $"No se logró enviar correo al usuario: {mensaje}");
@@ -644,7 +484,10 @@ namespace Negocio.Gestion
             bool resultado = await db.SaveChangesAsync() > 0;
 
             if (resultado)
+            {
+                await RevocarSesionesAsync(model.UsuarioId);
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
+            }
             return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
 
         }
@@ -685,7 +528,10 @@ namespace Negocio.Gestion
             bool resultado = await db.SaveChangesAsync() > 0;
 
             if (resultado)
+            {
+                await RevocarSesionesAsync(model.UsuarioId);
                 return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Operación realizada correctamente.");
+            }
             return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "Operación no exitosa.");
 
         }
@@ -749,13 +595,14 @@ namespace Negocio.Gestion
 
             db.Add(modelOtp);
 
-            var body = CrearCuerpoCorreoOtp(usuario.Nombres, usuario.Apellidos, otp, expiracionMin);
+            var correo = PlantillaCorreo.CodigoRestablecimiento(usuario.Nombres, otp, expiracionMin, _myConfig.Municipio);
             var (exito, mensaje) = UtilidadesLogica.EnviarCorreo(
                 _myConfig.CorreoNotificacion,
                 _myConfig.PasswordCorreo,
                 usuario.CorreoElectronico,
-                "Código OTP para cambio de contraseña",
-                body);
+                "Código para restablecer tu contraseña de Bradamela",
+                correo.Html,
+                correo.Texto);
 
             if (!exito)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, $"No se logró enviar el OTP al correo: {mensaje}");
@@ -765,15 +612,6 @@ namespace Negocio.Gestion
             if (!ok)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se logró registrar la solicitud OTP.");
             return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Se envió el código OTP al correo registrado.");
-        }
-
-        private string CrearCuerpoCorreoOtp(string nombres, string apellidos, string otp, int minutos)
-        {
-            var saludo = $"Estimado(a) {nombres} {apellidos},";
-            var intro = "Recibimos una solicitud para restablecer tu contraseña. " +
-                        "Para continuar, ingresa el siguiente código:";
-            var aviso = "Si no solicitaste este cambio, ignora este mensaje.";
-            return PlantillaCorreoOtp(saludo, intro, otp, minutos, aviso);
         }
 
         /// <summary>
@@ -856,7 +694,31 @@ namespace Negocio.Gestion
 
             if (!ok)
                 return new RespuestaDto<TReturn>(EstadoOperacion.Malo, "No se pudo restablecer la contraseña.");
+
+            await RevocarSesionesAsync(usuario.UsuarioId);
             return new RespuestaDto<TReturn>(EstadoOperacion.Bueno, "Contraseña restablecida correctamente.");
+        }
+
+        /// <summary>
+        /// Cierra todas las sesiones del POS web del usuario (tabla TA_SESION de
+        /// ms.seguridad) tras un cambio de contraseña. Si la tabla aún no existe
+        /// (script ta_sesion.sql sin ejecutar) no interrumpe la operación.
+        /// </summary>
+        private async Task RevocarSesionesAsync(string usuarioId)
+        {
+            try
+            {
+                var ahora = DateTime.SpecifyKind(DateTime.Now, DateTimeKind.Unspecified);
+                await db.Database.ExecuteSqlInterpolatedAsync(
+                    $@"UPDATE ""SC_ADMINISTRACION"".""TA_SESION""
+                          SET ""FECHA_REVOCACION"" = {ahora}
+                        WHERE ""USUARIO_ID"" = {usuarioId}
+                          AND ""FECHA_REVOCACION"" IS NULL");
+            }
+            catch (Exception)
+            {
+                // Sin la tabla de sesiones no hay nada que revocar.
+            }
         }
 
 

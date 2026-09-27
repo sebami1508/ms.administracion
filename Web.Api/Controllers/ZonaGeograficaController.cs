@@ -1,3 +1,4 @@
+using Comun.Enumeracion;
 using Comun.Dto.DtoCreate;
 using Comun.Dto.DtoReader;
 using Comun.Dto.DtoUpdate;
@@ -24,6 +25,7 @@ namespace WebApi.Controllers
 
         [HttpPost]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Guardar([FromBody] CZonaGeograficaDto _param)
         {
             return Ok(await zonaGeografica.GuardarAsync<CZonaGeograficaDto, bool>(_param));
@@ -31,6 +33,7 @@ namespace WebApi.Controllers
 
         [HttpPut]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Actualizar([FromBody] UZonaGeograficaDto _param)
         {
             return Ok(await zonaGeografica.ActualizarAsync<UZonaGeograficaDto, bool>(_param));
@@ -38,6 +41,7 @@ namespace WebApi.Controllers
 
         [HttpDelete]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Eliminar([FromBody] EliminarDto _param)
         {
             return Ok(await zonaGeografica.EliminarAsync<EliminarDto, bool>(_param));

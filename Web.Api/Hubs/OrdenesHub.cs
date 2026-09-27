@@ -1,18 +1,20 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Web.Api.Extension;
 
 namespace Web.Api.Hubs
 {
     /// <summary>
     /// Hub de órdenes en tiempo real.
     ///
-    /// Como el JWT del sistema es un token de servicio genérico (no lleva la
-    /// identidad real del usuario), la pertenencia a grupos se define con datos
-    /// que el cliente envía por query string al conectar:
-    ///   - personal=true  -> se une al grupo "personal" (staff: recibe órdenes
-    ///                        nuevas y todos los cambios de estado).
-    ///   - usuarioId={id}  -> se une al grupo "usuario:{id}" (cliente: recibe los
-    ///                        cambios de estado de SUS órdenes).
+    /// Los grupos se asignan con la identidad del JWT (ya no con lo que el
+    /// cliente envía por query string):
+    ///   - Personal (administradores y ventas) -> grupo "personal": recibe las
+    ///     órdenes nuevas y todos los cambios de estado.
+    ///   - Cualquier usuario -> grupo "usuario:{UsuarioId del token}": recibe
+    ///     los cambios de estado de SUS órdenes.
+    /// Los parámetros "personal" y "usuarioId" de la query se ignoran para no
+    /// permitir que alguien escuche las órdenes de otra persona.
     ///
     /// Eventos que emite el servidor:
     ///   - "OrdenNueva"            (payload de la orden)
@@ -27,14 +29,12 @@ namespace Web.Api.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            var http = Context.GetHttpContext();
-            var query = http?.Request.Query;
+            var usuario = Context.User;
 
-            var esPersonal = string.Equals(query?["personal"], "true", StringComparison.OrdinalIgnoreCase);
-            if (esPersonal)
+            if (usuario != null && usuario.EsPersonal())
                 await Groups.AddToGroupAsync(Context.ConnectionId, GrupoPersonal);
 
-            var usuarioId = query?["usuarioId"].ToString();
+            var usuarioId = usuario?.UsuarioId();
             if (!string.IsNullOrWhiteSpace(usuarioId))
                 await Groups.AddToGroupAsync(Context.ConnectionId, GrupoUsuario(usuarioId.Trim()));
 

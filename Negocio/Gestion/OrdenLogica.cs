@@ -212,6 +212,23 @@ namespace Negocio.Gestion
 
 
 
+        public async Task<string?> ValidarCambioEstadoAsync(string? ordenId, string? estadoNuevo, IReadOnlyCollection<string> roles)
+        {
+            if (string.IsNullOrWhiteSpace(ordenId))
+                return "Identificador de orden inválido.";
+
+            var estadoActual = await db.Set<TaOrdenModel>()
+                .AsNoTracking()
+                .Where(o => o.OrdenId == ordenId.Trim())
+                .Select(o => o.EstadoId)
+                .FirstOrDefaultAsync();
+
+            if (estadoActual == null)
+                return "La orden no existe.";
+
+            return ReglasOrden.ValidarCambioEstado(estadoActual, estadoNuevo, roles);
+        }
+
         public async Task<RespuestaDto<TReturn>> AceptarOrdenAsync<TParam, TReturn>(TParam _param)
         {
             var ordenId = _param as string;

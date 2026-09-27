@@ -1,3 +1,4 @@
+using Comun.Enumeracion;
 using Comun.Dto.DtoParameter;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,9 +24,10 @@ namespace WebApi.Controllers
         }
         #endregion
 
-        #region Métodos
+        #region Mï¿½todos
         [HttpPost]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Guardar(CRolDto? _param)
         {
             return Ok(await rol.GuardarAsync<CRolDto, bool>(_param));
@@ -33,6 +35,7 @@ namespace WebApi.Controllers
 
         [HttpPut]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Actualizar(URolDto? _param)
         {
             return Ok(await rol.ActualizarAsync<URolDto, bool>(_param));
@@ -40,6 +43,7 @@ namespace WebApi.Controllers
 
         [HttpDelete]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Eliminar(string _param)
         {
             return Ok(await rol.EliminarAsync<string, bool>(_param));
@@ -47,6 +51,7 @@ namespace WebApi.Controllers
 
         [HttpPut]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> ActualizarVigencia(URolDto? _param)
         {
             return Ok(await rol.ActualizarVigenciaAsync<URolDto, bool>(_param));
@@ -54,6 +59,7 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> ConsultarLista()
         {
             return Ok(await rol.ConsultarListaAsync<List<RRolDto>>());
@@ -61,6 +67,7 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> ConsultarListaVigentes()
         {
             return Ok(await rol.ConsultarListaVigentesAsync<List<RRolDto>>());

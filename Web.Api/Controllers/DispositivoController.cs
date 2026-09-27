@@ -4,6 +4,7 @@ using Comun.Enumeracion;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Negocio.Contrato;
+using Web.Api.Extension;
 
 namespace WebApi.Controllers
 {
@@ -27,6 +28,11 @@ namespace WebApi.Controllers
                 string.IsNullOrWhiteSpace(_param.Token))
                 return Ok(new RespuestaDto<bool>(EstadoOperacion.Validacion,
                     "Debe enviar el usuario y el token."));
+
+            // Cada quien registra su propio dispositivo: evita recibir las
+            // notificaciones de otro usuario.
+            if (!User.EsElMismo(_param.UsuarioId))
+                return this.NoAutorizado("Solo puede registrar su propio dispositivo.");
 
             await _fcm.RegistrarTokenAsync(_param.UsuarioId, _param.Token, _param.Plataforma);
             return Ok(new RespuestaDto<bool>(EstadoOperacion.Bueno,

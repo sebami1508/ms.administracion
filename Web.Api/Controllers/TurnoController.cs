@@ -1,3 +1,4 @@
+using Comun.Enumeracion;
 using Comun.Dto.DtoParameter;
 using Comun.Dto.DtoUtilidades;
 using Microsoft.AspNetCore.Authorization;
@@ -28,10 +29,11 @@ namespace WebApi.Controllers
 
         #endregion
 
-        #region Métodos
+        #region Mï¿½todos
 
         [HttpPost]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesPersonal)]
         public async Task<IActionResult> Guardar(CTurnoDto? _param)
         {
             return Ok(await turno.GuardarAsync<CTurnoDto, bool>(_param));
@@ -39,6 +41,7 @@ namespace WebApi.Controllers
 
         [HttpPut]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesPersonal)]
         public async Task<IActionResult> Actualizar(UTurnoDto? _param)
         {
             return Ok(await turno.ActualizarAsync<UTurnoDto, bool>(_param));
@@ -46,6 +49,7 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Eliminar(string _param)
         {
             return Ok(await turno.EliminarAsync<string, bool>(_param));
@@ -53,6 +57,7 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesPersonal)]
         public async Task<IActionResult> ConsultarLista()
         {
             return Ok(await turno.ConsultarListaAsync<List<RTurnoDto>>());

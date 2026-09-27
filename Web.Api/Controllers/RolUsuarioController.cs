@@ -1,3 +1,4 @@
+using Comun.Enumeracion;
 ﻿using Comun.Dto.DtoParameter;
 using Comun.Dto.DtoUtilidades;
 using Microsoft.AspNetCore.Authorization;
@@ -32,6 +33,7 @@ namespace WebApi.Controllers
 
         [HttpPost]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Guardar(CRolUsuarioDto? _param)
         {
 			return Ok(await rolUsuario.GuardarAsync<CRolUsuarioDto, bool>(_param));
@@ -39,6 +41,7 @@ namespace WebApi.Controllers
 
 		[HttpDelete]
 		[Route("[Action]")]
+		[Authorize(Roles = Constantes.RolesAdministradores)]
 		public async Task<IActionResult> Eliminar(EliminarDto _dto)
 		{
 			return Ok(await rolUsuario.EliminarAsync<EliminarDto, bool>(_dto));
@@ -46,6 +49,7 @@ namespace WebApi.Controllers
 
 		[HttpGet]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> ConsultarLista()
         {
             return Ok(await rolUsuario.ConsultarListaAsync<List<RRolUsuarioDto>>());
@@ -53,6 +57,7 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> ConsultarListaRoles()
         {
             return Ok(await rolUsuario.ConsultarListaRolesAsync<List<RRolDto>>());
@@ -60,6 +65,7 @@ namespace WebApi.Controllers
 
         [HttpGet]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> ConsultarListaRolesUsuarioId(string _param)
         {
             return Ok(await rolUsuario.ConsultarListaRolesUsuarioIdAsync<string, List<RRolUsuarioDto>>(_param));

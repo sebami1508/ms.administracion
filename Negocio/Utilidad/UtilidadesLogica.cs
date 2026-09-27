@@ -108,7 +108,14 @@ namespace Negocio.Utilidad
             return Encoding.UTF8.GetString(dataDecrypted);
         }
 
-        public static (bool, string) EnviarCorreo(string _correo, string _contraseña, string _destinario, string _asunto, string _body)
+        /// <summary>Imágenes que un correo puede embeber, por Content-ID (src='cid:...').</summary>
+        private static readonly (string Cid, string Archivo)[] ImagenesCorreo =
+        {
+            ("marca", "logo_blanco.png"),
+            ("logo", "logo_03.png"),
+        };
+
+        public static (bool, string) EnviarCorreo(string _correo, string _contraseña, string _destinario, string _asunto, string _body, string? _textoPlano = null)
         {
             if (string.IsNullOrWhiteSpace(_correo) || string.IsNullOrWhiteSpace(_contraseña) ||
                 string.IsNullOrWhiteSpace(_destinario) || string.IsNullOrWhiteSpace(_asunto) || string.IsNullOrWhiteSpace(_body))
@@ -118,25 +125,40 @@ namespace Negocio.Utilidad
 
             try
             {
-                var logoPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Imagenes\\Logos\\logo_03.png");
-
                 using (var mailMessage = new MailMessage())
                 {
                     mailMessage.From = new MailAddress(_correo);
                     mailMessage.Subject = _asunto;
-                    mailMessage.Body = _body;
-                    mailMessage.IsBodyHtml = true;
+                    mailMessage.SubjectEncoding = Encoding.UTF8;
 
-                    var htmlView = AlternateView.CreateAlternateViewFromString(_body, null, "text/html");
-
-                    if (!string.IsNullOrEmpty(logoPath) && File.Exists(logoPath))
+                    // Con texto plano el correo va como multipart/alternative
+                    // (texto + HTML); sin él, el cuerpo es solo el HTML.
+                    if (!string.IsNullOrWhiteSpace(_textoPlano))
                     {
-                        var logo = new LinkedResource(logoPath, "image/png")
+                        mailMessage.Body = _textoPlano;
+                        mailMessage.BodyEncoding = Encoding.UTF8;
+                        mailMessage.IsBodyHtml = false;
+                    }
+                    else
+                    {
+                        mailMessage.Body = _body;
+                        mailMessage.IsBodyHtml = true;
+                    }
+
+                    var htmlView = AlternateView.CreateAlternateViewFromString(_body, Encoding.UTF8, MediaTypeNames.Text.Html);
+
+                    foreach (var (cid, archivo) in ImagenesCorreo)
+                    {
+                        var ruta = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Imagenes", "Logos", archivo);
+                        var usada = _body.Contains($"cid:{cid}\"") || _body.Contains($"cid:{cid}'");
+                        if (!usada || !File.Exists(ruta))
+                            continue;
+
+                        htmlView.LinkedResources.Add(new LinkedResource(ruta, MediaTypeNames.Image.Png)
                         {
-                            ContentId = "logo",
+                            ContentId = cid,
                             TransferEncoding = TransferEncoding.Base64
-                        };
-                        htmlView.LinkedResources.Add(logo);
+                        });
                     }
 
                     mailMessage.AlternateViews.Add(htmlView);

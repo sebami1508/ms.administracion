@@ -1,3 +1,4 @@
+using Comun.Enumeracion;
 using Comun.Dto.DtoParameter;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,10 +28,11 @@ namespace WebApi.Controllers
 
         #endregion
 
-        #region Métodos
+        #region Mï¿½todos
 
         [HttpPost]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Guardar(CDominioDto? _param)
         {
             return Ok(await dominio.GuardarAsync<CDominioDto, bool>(_param));
@@ -38,6 +40,7 @@ namespace WebApi.Controllers
 
         [HttpPut]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Actualizar(UDominioDto? _param)
         {
             return Ok(await dominio.ActualizarAsync<UDominioDto, bool>(_param));
@@ -45,6 +48,7 @@ namespace WebApi.Controllers
 
         [HttpPut]
         [Route("[Action]")]
+        [Authorize(Roles = Constantes.RolesAdministradores)]
         public async Task<IActionResult> Eliminar(string _param)
         {
             return Ok(await dominio.EliminarAsync<string, bool>(_param));
